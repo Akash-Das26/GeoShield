@@ -1,23 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from datetime import datetime
 from typing import Optional
-import os
-import uuid
 from app.database import get_db
 from app.models import CitizenReport, RoadStatus, Village
+from app.auth import get_current_user, require_role
 
 router = APIRouter(prefix="/api", tags=["reports"])
-
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 # ---- Citizen Reports ----
 
 @router.post("/reports")
-async def create_report(
+def create_report(
     report_type: str = Form(...),
     description: str = Form(...),
     latitude: float = Form(...),
@@ -25,25 +21,14 @@ async def create_report(
     reporter_name: Optional[str] = Form(None),
     reporter_phone: Optional[str] = Form(None),
     reporter_language: str = Form("en"),
-    image: Optional[UploadFile] = File(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user)
 ):
-    image_path = None
-    if image:
-        ext = os.path.splitext(image.filename)[1] if image.filename else ".jpg"
-        filename = f"{uuid.uuid4()}{ext}"
-        filepath = os.path.join(UPLOAD_DIR, filename)
-        with open(filepath, "wb") as f:
-            content = await image.read()
-            f.write(content)
-        image_path = filename
-
     report = CitizenReport(
         report_type=report_type,
         description=description,
         latitude=latitude,
         longitude=longitude,
-        image_path=image_path,
         reporter_name=reporter_name,
         reporter_phone=reporter_phone,
         reporter_language=reporter_language,
@@ -82,7 +67,6 @@ def get_reports(
         "description": r.description,
         "latitude": r.latitude,
         "longitude": r.longitude,
-        "image_path": r.image_path,
         "reporter_name": r.reporter_name,
         "reporter_language": r.reporter_language,
         "status": r.status,
@@ -91,7 +75,7 @@ def get_reports(
 
 
 @router.put("/reports/{report_id}/verify")
-def verify_report(report_id: int, verified_by: str = "Admin", db: Session = Depends(get_db)):
+def verify_report(report_id: int, verified_by: str = "Admin", db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
     report = db.query(CitizenReport).filter(CitizenReport.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")

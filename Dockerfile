@@ -1,9 +1,11 @@
 FROM python:3.12-slim
 
-# Install Node.js
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get clean
+# Install Node.js (slim has no curl, so install it first)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl ca-certificates && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -13,6 +15,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend
 COPY backend/ ./backend/
+
+# Copy datasets for AI training data
+COPY datasets/ ./datasets/
 
 # Build frontend
 COPY frontend/ ./frontend/

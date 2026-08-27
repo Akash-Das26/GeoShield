@@ -4,11 +4,11 @@ import { getStation, getStationHistory, getWeather } from '../services/api';
 import { t } from '../i18n/translations';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  AreaChart, Area, RadialBarChart, RadialBar,
+  AreaChart, Area,
 } from 'recharts';
 import {
   ArrowLeft, Radio, Mountain, Droplets, Thermometer,
-  Activity, AlertTriangle, TrendingUp, Clock, ChevronRight,
+  Activity, AlertTriangle, TrendingUp, ChevronRight,
 } from 'lucide-react';
 
 const RISK_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -126,7 +126,7 @@ export default function StationDetail() {
         {[
           { label: t('elevation'), value: `${s.elevation}m`, icon: Mountain },
           { label: t('slopeAngle'), value: `${s.slope_angle}°`, icon: TrendingUp },
-          { label: t('soilType'), value: s.soil_type.replace('_', ' '), icon: Droplets },
+          { label: t('soilType'), value: (s.soil_type || 'Unknown').replace('_', ' '), icon: Droplets },
           { label: t('vegetationCover'), value: `${s.vegetation_cover}%`, icon: Droplets },
           { label: 'Status', value: 'Active', icon: Radio },
         ].map((item, i) => (

@@ -6,13 +6,14 @@ import os
 from datetime import datetime
 from typing import List
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 
 from app.database import engine, Base, SessionLocal
 from app.routers import sensors, dashboard, alerts, reports, weather
+from app.auth import authenticate_user, create_token
 
 
 class ConnectionManager:
@@ -28,11 +29,19 @@ class ConnectionManager:
             self.active_connections.remove(websocket)
 
     async def broadcast(self, message: dict):
-        for connection in self.active_connections[:]:
+        disconnected = []
+        for connection in self.active_connections:
             try:
                 await connection.send_json(message)
-            except Exception:
-                self.active_connections.remove(connection)
+            except WebSocketDisconnect:
+                disconnected.append(connection)
+            except RuntimeError as e:
+                # Connection closed or other runtime error
+                disconnected.append(connection)
+        
+        # Remove disconnected connections after iteration
+        for conn in disconnected:
+            self.disconnect(conn)
 
 
 manager = ConnectionManager()
@@ -83,6 +92,22 @@ def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 
+@app.post("/api/auth/login")
+def login(email: str = Form(...), password: str = Form(...)):
+    user = authenticate_user(email, password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    token = create_token(user)
+    return {
+        "token": token,
+        "user": {
+            "email": user["email"],
+            "name": user["name"],
+            "role": user["role"],
+        },
+    }
+
+
 @app.websocket("/ws/alerts")
 async def websocket_alerts(websocket: WebSocket):
     await manager.connect(websocket)
@@ -105,10 +130,17 @@ if os.path.exists(FRONTEND_DIR):
         # Skip API and WebSocket routes - let FastAPI handle them
         if full_path.startswith("api/") or full_path.startswith("ws"):
             return {"message": "Not found", "version": "1.0.0"}
-        # Serve static files if they exist
-        file_path = os.path.join(FRONTEND_DIR, full_path)
-        if full_path and os.path.isfile(file_path):
-            return FileResponse(file_path)
+        # Sanitize path to prevent path traversal attacks
+        if full_path:
+            normalized = os.path.normpath(full_path).lstrip(os.sep)
+            if normalized.startswith("..") or os.path.isabs(normalized):
+                return {"message": "Not found", "version": "1.0.0"}
+            file_path = os.path.join(FRONTEND_DIR, normalized)
+            # Ensure resolved path stays within FRONTEND_DIR
+            if not os.path.abspath(file_path).startswith(os.path.abspath(FRONTEND_DIR)):
+                return {"message": "Not found", "version": "1.0.0"}
+            if os.path.isfile(file_path):
+                return FileResponse(file_path)
         # Serve index.html for all other routes (SPA routing)
         index_path = os.path.join(FRONTEND_DIR, "index.html")
         if os.path.isfile(index_path):
