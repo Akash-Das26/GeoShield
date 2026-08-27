@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
   getDashboardStats, getRainfallTrend, getRiskTrend, getStateSummary,
-  getRiskHeatmap, getStations,
-  DashboardStats, HeatmapPoint, Station,
+  getRiskHeatmap, getStations, getAlerts, acknowledgeAlert, resolveAlert,
+  DashboardStats, HeatmapPoint, Station, Alert,
 } from '../services/api';
 import { t } from '../i18n/translations';
 import {
@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [riskTrend, setRiskTrend] = useState<{ timestamp: string; avg_risk: number }[]>([]);
   const [stateData, setStateData] = useState<{ state: string; stations: number; avg_risk_score: number; critical_count: number }[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
+  const [alertsData, setAlertsData] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeTab, setActiveTab] = useState<'overview' | 'stations' | 'alerts'>('overview');
@@ -43,18 +44,20 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsRes, rainRes, riskRes, stateRes, stationsRes] = await Promise.all([
+        const [statsRes, rainRes, riskRes, stateRes, stationsRes, alertsRes] = await Promise.all([
           getDashboardStats(),
           getRainfallTrend(),
           getRiskTrend(),
           getStateSummary(),
           getStations(),
+          getAlerts({ status: 'active' }),
         ]);
         setStats(statsRes.data);
         setRainfall(rainRes.data);
         setRiskTrend(riskRes.data);
         setStateData(stateRes.data);
         setStations(stationsRes.data);
+        setAlertsData(alertsRes.data);
       } catch (e) {
         console.error('Dashboard fetch error:', e);
       } finally {
@@ -136,6 +139,33 @@ export default function Dashboard() {
       );
     }
     return null;
+  };
+
+  const getTimeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  };
+
+  const handleAcknowledge = async (id: number) => {
+    try {
+      await acknowledgeAlert(id);
+      setAlertsData(prev => prev.filter(a => a.id !== id));
+    } catch (e) {
+      console.error('Acknowledge failed:', e);
+    }
+  };
+
+  const handleResolve = async (id: number) => {
+    try {
+      await resolveAlert(id);
+      setAlertsData(prev => prev.filter(a => a.id !== id));
+    } catch (e) {
+      console.error('Resolve failed:', e);
+    }
   };
 
   return (
@@ -531,46 +561,57 @@ export default function Dashboard() {
         <div className="glass rounded-xl p-6">
           <div className="flex items-center gap-2 mb-6">
             <Bell className="w-5 h-5 text-red-400" />
-            <h3 className="text-lg font-semibold text-white">Active Alerts & Warnings</h3>
+            <h3 className="text-lg font-semibold text-white">{t('activeAlertsWarnings')}</h3>
+            <span className="ml-auto text-xs text-dark-500">{alertsData.length} {t('active').toLowerCase()}</span>
           </div>
+          {alertsData.length === 0 ? (
+            <div className="text-center py-8">
+              <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2" />
+              <p className="text-dark-400 text-sm">{t('noData')}</p>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { title: 'Heavy Rainfall Alert - Cherrapunji', level: 'critical', station: 'NER-011', pop: 12000, time: '2h ago' },
-              { title: 'Slope Instability Warning - Tawang', level: 'high', station: 'NER-019', pop: 8500, time: '4h ago' },
-              { title: 'Road Blockage - Imphal-Jiribam Highway', level: 'high', station: 'NER-006', pop: 15000, time: '6h ago' },
-              { title: 'Soil Saturation Alert - Ziro Valley', level: 'moderate', station: 'NER-017', pop: 5500, time: '8h ago' },
-              { title: 'Ground Displacement Detected - Pasighat', level: 'moderate', station: 'NER-018', pop: 9000, time: '12h ago' },
-            ].map((alert, i) => (
-              <div key={i} className={`p-4 rounded-xl border transition-all hover:scale-[1.01] ${
-                alert.level === 'critical' ? 'bg-red-600/10 border-red-600/30' :
-                alert.level === 'high' ? 'bg-orange-600/10 border-orange-600/30' :
+            {alertsData.map((alert) => {
+              const timeAgo = getTimeAgo(alert.created_at);
+              return (
+              <div key={alert.id} className={`p-4 rounded-xl border transition-all hover:scale-[1.01] ${
+                alert.risk_level === 'critical' ? 'bg-red-600/10 border-red-600/30' :
+                alert.risk_level === 'high' ? 'bg-orange-600/10 border-orange-600/30' :
                 'bg-amber-600/10 border-amber-600/30'
               }`}>
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-semibold text-white">{alert.title}</p>
-                    <p className="text-xs text-dark-400 mt-1">Station: {alert.station} • {alert.time}</p>
-                    <p className="text-xs text-dark-400 mt-0.5">👥 {alert.pop.toLocaleString()} people affected</p>
+                    <p className="text-xs text-dark-400 mt-1">{t('stationLabel')}: {alert.station_id} \u2022 {timeAgo}</p>
+                    <p className="text-xs text-dark-400 mt-0.5">\ud83d\udc65 {alert.affected_population.toLocaleString()} {t('peopleAffected')}</p>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    alert.level === 'critical' ? 'bg-red-600/20 text-red-400' :
-                    alert.level === 'high' ? 'bg-orange-600/20 text-orange-400' :
+                    alert.risk_level === 'critical' ? 'bg-red-600/20 text-red-400' :
+                    alert.risk_level === 'high' ? 'bg-orange-600/20 text-orange-400' :
                     'bg-amber-600/20 text-amber-400'
                   }`}>
-                    {alert.level.toUpperCase()}
+                    {alert.risk_level.toUpperCase()}
                   </span>
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <button className="px-3 py-1 rounded-lg bg-amber-600/20 text-amber-400 border border-amber-600/30 text-xs font-medium hover:bg-amber-600/30 transition-all">
-                    Acknowledge
+                  <button
+                    onClick={() => handleAcknowledge(alert.id)}
+                    className="px-3 py-1 rounded-lg bg-amber-600/20 text-amber-400 border border-amber-600/30 text-xs font-medium hover:bg-amber-600/30 transition-all"
+                  >
+                    {t('acknowledge')}
                   </button>
-                  <button className="px-3 py-1 rounded-lg bg-green-600/20 text-green-400 border border-green-600/30 text-xs font-medium hover:bg-green-600/30 transition-all">
-                    Resolve
+                  <button
+                    onClick={() => handleResolve(alert.id)}
+                    className="px-3 py-1 rounded-lg bg-green-600/20 text-green-400 border border-green-600/30 text-xs font-medium hover:bg-green-600/30 transition-all"
+                  >
+                    {t('resolve')}
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
+          )}
         </div>
       )}
 
