@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #0f172a;
+  color: #e2e8f0;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Leaflet map overrides */
+.leaflet-container {
+  background: #1e293b;
+  border-radius: 12px;
+}
+
+.leaflet-popup-content-wrapper {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 12px;
+  border: 1px solid #334155;
+}
+
+.leaflet-popup-tip {
+  background: #1e293b;
+}
+
+/* Pulse animation for alerts */
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.pulse-alert {
+  animation: pulse-red 2s ease-in-out infinite;
+}
+
+/* Gradient backgrounds */
+.gradient-bg {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+}
+
+.gradient-card {
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+}
+
+/* Risk level badges */
+.risk-low {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+.risk-moderate {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.risk-high {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+}
+.risk-critical {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* Glass morphism */
+.glass {
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
