@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getCurrentLanguage } from '../i18n/translations';
 
 const API_BASE = '/api';
 
@@ -199,7 +200,7 @@ export const getStationHistory = (id: string, hours = 24) => api.get(`/sensors/s
 
 // Alerts
 export const getAlerts = (params?: { status?: string; risk_level?: string }) =>
-  api.get<Alert[]>('/alerts', { params });
+  api.get<Alert[]>('/alerts', { params: { ...params, lang: getCurrentLanguage() } });
 export const getActiveAlerts = () => api.get<Alert[]>('/alerts/active');
 export const getAlertStats = () => api.get<{ total: number; active: number; acknowledged: number; resolved: number; critical_active: number; high_active: number }>('/alerts/stats');
 export const acknowledgeAlert = (id: number) => api.put(`/alerts/${id}/acknowledge`);

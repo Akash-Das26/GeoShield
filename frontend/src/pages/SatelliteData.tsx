@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getSatelliteSummary, getSatelliteData, getSatelliteRiskZones, SatelliteSummary, SatelliteStation, SatelliteRiskZone } from '../services/api';
+import { t } from '../i18n/translations';
 import {
   Satellite, Mountain, Droplets, Leaf, Thermometer, Wind,
   CloudRain, TrendingUp, MapPin, RefreshCw, AlertTriangle,
@@ -46,8 +47,8 @@ export default function SatelliteData() {
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-dark-400 text-sm">Fetching satellite data...</p>
-          <p className="text-dark-500 text-xs mt-1">Connecting to Open-Meteo API</p>
+          <p className="text-dark-400 text-sm">{t('fetchingSatelliteData')}</p>
+          <p className="text-dark-500 text-xs mt-1">{t('connectingApi')}</p>
         </div>
       </div>
     );
@@ -60,10 +61,10 @@ export default function SatelliteData() {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Satellite className="w-6 h-6 text-blue-400" />
-            Real Satellite Data
+            {t('realSatelliteData')}
           </h1>
           <p className="text-dark-400 text-sm mt-1">
-            Live data from Open-Meteo satellite APIs for all 20 NER stations
+            {t('liveSatelliteDesc')}
           </p>
         </div>
         <button
@@ -71,7 +72,7 @@ export default function SatelliteData() {
           className="px-3 py-2 rounded-xl bg-dark-800 border border-dark-700 text-dark-400 hover:text-white hover:border-blue-600/30 transition-all flex items-center gap-2 text-sm"
         >
           <RefreshCw className="w-4 h-4" />
-          Refresh
+          {t('refresh')}
         </button>
       </div>
 
@@ -79,9 +80,8 @@ export default function SatelliteData() {
       <div className="flex items-center gap-3">
         <span className="px-3 py-1.5 rounded-full bg-green-600/10 border border-green-600/20 text-green-400 text-xs font-medium flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          Live from Open-Meteo
-        </span>
-        <span className="text-xs text-dark-500">{summary?.data_source}</span>
+          {t('liveFromOpenMeteo')}
+        </span>          <span className="text-xs text-dark-500">{summary?.data_source}</span>
       </div>
 
       {/* Tab Switcher */}
@@ -106,27 +106,27 @@ export default function SatelliteData() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="glass rounded-xl p-4">
             <Mountain className="w-6 h-6 text-blue-400 mb-2" />
-            <p className="text-xs text-dark-400">Elevation Range</p>
+            <p className="text-xs text-dark-400">{t('elevationRange')}</p>
             <p className="text-xl font-bold text-white">{summary.elevation.min} - {summary.elevation.max}</p>
             <p className="text-xs text-dark-500">Avg: {summary.elevation.avg}m</p>
           </div>
           <div className="glass rounded-xl p-4">
             <Droplets className="w-6 h-6 text-emerald-400 mb-2" />
-            <p className="text-xs text-dark-400">Soil Moisture (Surface)</p>
+            <p className="text-xs text-dark-400">{t('soilMoistureSurface')}</p>
             <p className="text-xl font-bold text-white">{summary.soil_moisture_surface.avg}</p>
-            <p className="text-xs text-dark-500">m³/m³ avg across NER</p>
+            <p className="text-xs text-dark-500">{t('avgAcrossNERLabel')}</p>
           </div>
           <div className="glass rounded-xl p-4">
             <CloudRain className="w-6 h-6 text-cyan-400 mb-2" />
-            <p className="text-xs text-dark-400">Rainfall 24h Total</p>
+            <p className="text-xs text-dark-400">{t('rainfall24hTotal')}</p>
             <p className="text-xl font-bold text-white">{summary.rainfall_24h.total}</p>
-            <p className="text-xs text-dark-500">mm across {summary.total_stations} stations</p>
+            <p className="text-xs text-dark-500">{t('mmAcrossStations').replace('{n}', String(summary.total_stations))}</p>
           </div>
           <div className="glass rounded-xl p-4">
             <Leaf className="w-6 h-6 text-green-400 mb-2" />
-            <p className="text-xs text-dark-400">Average NDVI</p>
+            <p className="text-xs text-dark-400">{t('avgNdvi')}</p>
             <p className="text-xl font-bold text-white">{summary.ndvi.avg}</p>
-            <p className="text-xs text-dark-500">Vegetation index (0-1)</p>
+            <p className="text-xs text-dark-500">{t('vegetationIndexDesc')}</p>
           </div>
         </div>
       )}
@@ -136,19 +136,19 @@ export default function SatelliteData() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="glass rounded-xl p-4">
             <CloudRain className="w-5 h-5 text-blue-400 mb-2" />
-            <p className="text-xs text-dark-400">Rainfall 7 Days</p>
+            <p className="text-xs text-dark-400">{t('rainfall7Days')}</p>
             <p className="text-lg font-bold text-white">{summary.rainfall_7d.total} mm total</p>
-            <p className="text-xs text-dark-500">Max: {summary.rainfall_7d.max}mm at one station</p>
+            <p className="text-xs text-dark-500">{t('maxRainfallOneStation').replace('{n}', String(summary.rainfall_7d.max))}</p>
           </div>
           <div className="glass rounded-xl p-4">
             <Thermometer className="w-5 h-5 text-red-400 mb-2" />
-            <p className="text-xs text-dark-400">Temperature</p>
+            <p className="text-xs text-dark-400">{t('temperature')}</p>
             <p className="text-lg font-bold text-white">{summary.temperature.min}°C - {summary.temperature.max}°C</p>
             <p className="text-xs text-dark-500">Avg: {summary.temperature.avg}°C</p>
           </div>
           <div className="glass rounded-xl p-4">
             <Wind className="w-5 h-5 text-cyan-400 mb-2" />
-            <p className="text-xs text-dark-400">Humidity</p>
+            <p className="text-xs text-dark-400">{t('humidity')}</p>
             <p className="text-lg font-bold text-white">{summary.humidity.min}% - {summary.humidity.max}%</p>
             <p className="text-xs text-dark-500">Avg: {summary.humidity.avg}%</p>
           </div>
@@ -158,7 +158,7 @@ export default function SatelliteData() {
         <div>
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5 text-green-400" />
-            Station-wise Satellite Data
+            {t('stationWiseData')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {stations.map((station) => {
@@ -231,7 +231,7 @@ export default function SatelliteData() {
                       }`} style={{ width: `${Math.min(100, riskScore)}%` }} />
                     </div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-[9px] text-dark-500">Satellite Risk</span>
+                      <span className="text-[9px] text-dark-500">{t('satelliteRiskLabel')}</span>
                       <span className="text-[9px] text-dark-400 font-medium">{riskScore.toFixed(1)}/100</span>
                     </div>
                   </div>
@@ -245,10 +245,10 @@ export default function SatelliteData() {
         <div>
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-red-400" />
-            Satellite-Based Risk Zones
+            {t('satelliteBasedRiskZones')}
           </h2>
           <p className="text-xs text-dark-400 mb-4">
-            Risk calculated from real satellite metrics: elevation, soil moisture, rainfall, NDVI
+            {t('riskCalcFromMetrics')}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {riskZones.map((zone) => (
@@ -293,23 +293,23 @@ export default function SatelliteData() {
 
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs">
-                    <span className="text-dark-400">Elevation Risk</span>
+                    <span className="text-dark-400">{t('elevationRisk')}</span>
                     <span className="text-white font-medium">{zone.factors.elevation_risk}%</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-dark-400">Soil Moisture Risk</span>
+                    <span className="text-dark-400">{t('soilMoistureRisk')}</span>
                     <span className="text-white font-medium">{zone.factors.soil_moisture_risk}%</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-dark-400">Rainfall Risk</span>
+                    <span className="text-dark-400">{t('rainfallRiskLabel')}</span>
                     <span className="text-white font-medium">{zone.factors.rainfall_risk}%</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-dark-400">Vegetation Risk</span>
+                    <span className="text-dark-400">{t('vegetationRisk')}</span>
                     <span className="text-white font-medium">{zone.factors.vegetation_risk}%</span>
                   </div>
                   <div className="flex justify-between text-xs border-t border-dark-700 pt-1">
-                    <span className="text-dark-400 font-medium">Composite Score</span>
+                    <span className="text-dark-400 font-medium">{t('compositeScore')}</span>
                     <span className={`font-bold ${zone.risk_level === 'critical' ? 'text-red-400' : zone.risk_level === 'high' ? 'text-orange-400' : zone.risk_level === 'moderate' ? 'text-amber-400' : 'text-green-400'}`}>
                       {zone.satellite_risk_score}/100
                     </span>

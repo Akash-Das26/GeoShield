@@ -48,7 +48,16 @@ manager = ConnectionManager()
 
 
 def init_database():
-    Base.metadata.create_all(bind=engine)
+    # Production (PostgreSQL/external DB): use Alembic migrations
+    # Dev (SQLite): create_all is faster and auto-syncs with models
+    if os.getenv("DATABASE_URL"):
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config(os.path.join(os.path.dirname(__file__), "..", "alembic.ini"))
+        command.upgrade(alembic_cfg, "head")
+        print("[GeoShield] ✅ Database migrated via Alembic")
+    else:
+        Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         from app.models import SensorStation
