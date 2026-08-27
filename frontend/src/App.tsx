@@ -6,10 +6,11 @@ import RiskMap from './pages/RiskMap';
 import Alerts from './pages/Alerts';
 import Reports from './pages/Reports';
 import StationDetail from './pages/StationDetail';
+import Simulator from './pages/Simulator';
 import {
   LayoutDashboard, Map, AlertTriangle, FileText, Globe, Shield, Radio,
   ChevronLeft, Clock, LogOut, User, Bell, Search, Activity, Mountain,
-  Droplets, BarChart3, Settings, Home, TrendingUp, Building2, MapPin,
+  Droplets, BarChart3, Settings, Home, TrendingUp, Building2, MapPin, Zap,
 } from 'lucide-react';
 
 interface AuthContextType {
@@ -160,6 +161,7 @@ function MainLayout() {
     { to: '/map', icon: Map, label: t('map'), badge: null },
     { to: '/alerts', icon: AlertTriangle, label: t('alerts'), badge: activeAlerts > 0 ? activeAlerts : null },
     { to: '/reports', icon: FileText, label: t('reports'), badge: null },
+    { to: '/simulator', icon: Zap, label: 'Simulator', badge: null },
   ];
 
   return (
@@ -357,6 +359,7 @@ function MainLayout() {
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/station/:stationId" element={<StationDetail />} />
+            <Route path="/simulator" element={<Simulator />} />
           </Routes>
         </main>
       </div>

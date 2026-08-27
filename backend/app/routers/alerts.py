@@ -8,7 +8,7 @@ from app.models import Alert
 router = APIRouter(prefix="/api/alerts", tags=["alerts"])
 
 
-@router.get("/")
+@router.get("")
 def get_alerts(
     status: str = None,
     risk_level: str = None,
