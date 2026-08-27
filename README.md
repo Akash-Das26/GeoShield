@@ -862,14 +862,14 @@ GeoShield/
 
 ## 👥 Team GeoShield
 
-| Name | Roll No | Role |
-|------|---------|------|
-| **Arghya Bose** | 24155380 | Team Lead / Full-Stack Development |
-| **Arindam Tripathi** | 24155614 | Backend & AI/ML Engineering |
-| **Arnab Pal** | 24155615 | Frontend Development |
-| **Aaditree Shreya** | 24155371 | Data Engineering |
-| **Ankan Nag** | 2405791 | IoT Integration |
-| **Akash Das** | 24155155 | Testing & Deployment |
+| Name | Roll No |
+|------|----------|
+| **Arghya Bose** | 24155380 |
+| **Arindam Tripathi** | 24155614 |
+| **Arnab Pal** | 24155615 |
+| **Aaditree Shreya** | 24155371 |
+| **Ankan Nag** | 2405791 |
+| **Akash Das** | 24155155 |
 
 ---
 
