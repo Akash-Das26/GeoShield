@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, createContext, useContext } from 'react';
 import { t, setLanguage, Language, languages } from './i18n/translations';
+import { loginAPI, setStoredToken, clearStoredToken, getStoredToken, getAlertStats } from './services/api';
 import Dashboard from './pages/Dashboard';
 import RiskMap from './pages/RiskMap';
 import Alerts from './pages/Alerts';
@@ -38,22 +39,24 @@ function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setTimeout(() => {
-      if (email && password) {
-        const name = email.split('@')[0];
-        const role = email.includes('admin') ? 'Administrator' :
-                     email.includes('field') ? 'Field Officer' : 'District Admin';
-        login(name, role);
-        navigate('/');
-      } else {
-        setError('Please enter email and password');
-        setLoading(false);
-      }
-    }, 800);
+    if (!email || !password) {
+      setError('Please enter email and password');
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await loginAPI(email, password);
+      setStoredToken(res.data.token);
+      login(res.data.user.name, res.data.user.role);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Login failed. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -143,13 +146,25 @@ function MainLayout() {
   const [lang, setLangState] = useState<Language>('en');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [activeAlerts, setActiveAlerts] = useState(5);
+  const [activeAlerts, setActiveAlerts] = useState(0);
   const { user, logout } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
     const clock = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(clock);
+  }, []);
+
+  useEffect(() => {
+    const fetchAlertCount = async () => {
+      try {
+        const res = await getAlertStats();
+        setActiveAlerts(res.data.active);
+      } catch { /* ignore */ }
+    };
+    fetchAlertCount();
+    const interval = setInterval(fetchAlertCount, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleLangChange = (newLang: Language) => {
@@ -374,12 +389,31 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ name: string; role: string } | null>(null);
 
+  // Restore session from stored JWT on mount
+  useEffect(() => {
+    const token = getStoredToken();
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp * 1000 > Date.now()) {
+          setUser({ name: payload.name, role: payload.role });
+          setIsLoggedIn(true);
+        } else {
+          clearStoredToken();
+        }
+      } catch {
+        clearStoredToken();
+      }
+    }
+  }, []);
+
   const login = (name: string, role: string) => {
     setIsLoggedIn(true);
     setUser({ name, role });
   };
 
   const logout = () => {
+    clearStoredToken();
     setIsLoggedIn(false);
     setUser(null);
   };

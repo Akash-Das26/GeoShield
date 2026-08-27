@@ -4,6 +4,7 @@ from sqlalchemy import desc
 from datetime import datetime
 from app.database import get_db
 from app.models import Alert
+from app.auth import get_current_user, require_role
 
 router = APIRouter(prefix="/api/alerts", tags=["alerts"])
 
@@ -58,7 +59,7 @@ def get_active_alerts(db: Session = Depends(get_db)):
 
 
 @router.put("/{alert_id}/acknowledge")
-def acknowledge_alert(alert_id: int, db: Session = Depends(get_db)):
+def acknowledge_alert(alert_id: int, db: Session = Depends(get_db), user: dict = Depends(require_role("admin", "field_officer", "district_admin"))):
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
@@ -69,7 +70,7 @@ def acknowledge_alert(alert_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{alert_id}/resolve")
-def resolve_alert(alert_id: int, db: Session = Depends(get_db)):
+def resolve_alert(alert_id: int, db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")

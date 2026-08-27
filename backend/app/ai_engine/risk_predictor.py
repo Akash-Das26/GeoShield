@@ -10,6 +10,15 @@ import json
 import csv
 from datetime import datetime, timedelta
 
+# Bump this to force re-training when model architecture changes
+_MODEL_VERSION = "2.0"
+
+# Training data path - can be overridden via env var for Docker deployments
+TRAINING_DATA_PATH = os.getenv(
+    "TRAINING_DATA_PATH",
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "datasets", "processed", "real_ner_training_data.csv")
+)
+
 
 class LandslideRiskPredictor:
     """
@@ -17,6 +26,8 @@ class LandslideRiskPredictor:
     Combines Random Forest and Gradient Boosting for robust predictions.
     Trained on real NER data with elevation, slope, NDVI, soil moisture.
     """
+
+    CACHE_FILE = os.path.join(os.path.dirname(__file__), "models", "geoshield_model.pkl")
 
     def __init__(self):
         self.model_dir = os.path.join(os.path.dirname(__file__), "models")
@@ -36,44 +47,71 @@ class LandslideRiskPredictor:
             "high": 75,
             "critical": 90
         }
-        self._build_model()
+        if not self._load_cached_model():
+            self._build_model()
+
+    def _load_cached_model(self) -> bool:
+        """Try to load a previously saved model from disk."""
+        if not os.path.exists(self.CACHE_FILE):
+            return False
+        try:
+            cached = joblib.load(self.CACHE_FILE)
+            if cached.get("version") != _MODEL_VERSION:
+                print(f"[GeoShield AI] Model version mismatch (cached={cached['version']}, expected={_MODEL_VERSION}), retraining...")
+                return False
+            self.model = cached["model"]
+            self.scaler = cached["scaler"]
+            print(f"[GeoShield AI] Loaded cached model from {self.CACHE_FILE}")
+            return True
+        except Exception as e:
+            print(f"[GeoShield AI] Failed to load cached model: {e}")
+            return False
+
+    def _save_model(self):
+        """Save the trained model to disk for future startups."""
+        try:
+            joblib.dump({
+                "version": _MODEL_VERSION,
+                "model": self.model,
+                "scaler": self.scaler,
+            }, self.CACHE_FILE)
+            print(f"[GeoShield AI] Model cached to {self.CACHE_FILE}")
+        except Exception as e:
+            print(f"[GeoShield AI] Failed to cache model: {e}")
 
     def _load_real_training_data(self):
-        """Load real NER training data from CSV."""
-        data_paths = [
-            os.path.join(os.path.dirname(__file__), "..", "..", "..", "datasets", "processed", "real_ner_training_data.csv"),
-            os.path.join(os.path.dirname(__file__), "..", "..", "datasets", "processed", "real_ner_training_data.csv"),
-        ]
+        """Load real NER training data and labels from CSV."""
+        path = TRAINING_DATA_PATH
 
-        for path in data_paths:
-            if os.path.exists(path):
-                try:
-                    data = []
-                    with open(path, 'r') as f:
-                        reader = csv.DictReader(f)
-                        for row in reader:
-                            try:
-                                data.append([
-                                    float(row['slope']),
-                                    float(row['elevation']),
-                                    float(row['aspect']),
-                                    float(row['rainfall_daily']),
-                                    float(row['rainfall_7day']),
-                                    float(row['ndvi']),
-                                    float(row['soil_moisture']),
-                                    float(row['distance_to_road']),
-                                    float(row['month']),
-                                ])
-                            except (ValueError, KeyError):
-                                continue
-                    if len(data) > 100:
-                        print(f"[GeoShield AI] Loaded {len(data)} real NER training samples from {path}")
-                        return np.array(data)
-                except Exception as e:
-                    print(f"[GeoShield AI] Error loading {path}: {e}")
-                    continue
+        if os.path.exists(path):
+            try:
+                data = []
+                labels = []
+                with open(path, 'r') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        try:
+                            data.append([
+                                float(row['slope']),
+                                float(row['elevation']),
+                                float(row['aspect']),
+                                float(row['rainfall_daily']),
+                                float(row['rainfall_7day']),
+                                float(row['ndvi']),
+                                float(row['soil_moisture']),
+                                float(row['distance_to_road']),
+                                float(row['month']),
+                            ])
+                            labels.append(int(row['landslide']))
+                        except (ValueError, KeyError):
+                            continue
+                if len(data) > 100:
+                    print(f"[GeoShield AI] Loaded {len(data)} real NER training samples from {path}")
+                    return np.array(data), np.array(labels)
+            except Exception as e:
+                print(f"[GeoShield AI] Error loading {path}: {e}")
 
-        return None
+        return None, None
 
     def _build_model(self):
         """Build and train the ML model with real or synthetic data."""
@@ -82,37 +120,44 @@ class LandslideRiskPredictor:
         from sklearn.model_selection import train_test_split
 
         # Try to load real training data first
-        real_data = self._load_real_training_data()
+        real_data, real_labels = self._load_real_training_data()
 
-        if real_data is not None and len(real_data) > 100:
-            # Use real NER data
+        if real_data is not None and real_labels is not None and len(real_data) > 100:
+            # Use real NER data with actual ground-truth labels from CSV
             X = real_data
-            np.random.seed(42)
+            n_samples = len(X)
 
-            # Generate labels based on realistic scoring from real features
-            slope_factor = X[:, 0] / 60  # slope
-            elev_factor = np.clip(X[:, 1] / 2000, 0, 1)  # elevation
-            rainfall_factor = np.clip(X[:, 3] / 10, 0, 1)  # daily rainfall
-            rain7_factor = np.clip(X[:, 4] / 50, 0, 1)  # 7-day rainfall
-            ndvi_factor = 1 - np.clip(X[:, 5], 0, 1)  # low NDVI = high risk
-            moisture_factor = np.clip(X[:, 6], 0, 1)  # soil moisture
+            # Convert binary landslide labels (0/1) to 4-class risk levels
+            # by combining the ground-truth label with a severity score
+            # derived from terrain and weather features.
+            slope_sev = np.clip(X[:, 0] / 60, 0, 1)           # slope (0-1)
+            rain_sev = np.clip(X[:, 3] / 20, 0, 1)            # daily rainfall
+            rain7_sev = np.clip(X[:, 4] / 60, 0, 1)           # 7-day rainfall
+            moisture_sev = np.clip(X[:, 6], 0, 1)              # soil moisture
+            ndvi_sev = 1 - np.clip(X[:, 5], 0, 1)              # low veg = high risk
+            elev_sev = np.clip((X[:, 1] - 500) / 2000, 0, 1)   # elevation
 
-            risk_score = (
-                slope_factor * 0.25 +
-                elev_factor * 0.10 +
-                rainfall_factor * 0.20 +
-                rain7_factor * 0.15 +
-                ndvi_factor * 0.15 +
-                moisture_factor * 0.15 +
-                np.random.normal(0, 0.05, len(X))
+            severity = (
+                slope_sev * 0.25 +
+                rain_sev * 0.20 +
+                rain7_sev * 0.15 +
+                moisture_sev * 0.15 +
+                ndvi_sev * 0.15 +
+                elev_sev * 0.10
             )
 
-            y = np.zeros(len(X), dtype=int)
-            y[risk_score >= 0.35] = 1  # moderate+
-            y[risk_score >= 0.55] = 2  # high
-            y[risk_score >= 0.70] = 3  # critical
+            # Map to 4 classes:
+            #   landslide=0            -> 0 (low)
+            #   landslide=1, sev < 0.4 -> 1 (moderate)
+            #   landslide=1, sev < 0.6 -> 2 (high)
+            #   landslide=1, sev >= 0.6 -> 3 (critical)
+            y = np.zeros(n_samples, dtype=int)
+            landslide_mask = real_labels == 1
+            y[landslide_mask & (severity < 0.4)] = 1
+            y[landslide_mask & (severity >= 0.4) & (severity < 0.6)] = 2
+            y[landslide_mask & (severity >= 0.6)] = 3
 
-            n_samples = len(X)
+            print(f"[GeoShield AI] Label distribution: low={np.sum(y==0)}, moderate={np.sum(y==1)}, high={np.sum(y==2)}, critical={np.sum(y==3)}")
         else:
             # Fallback to synthetic data
             print("[GeoShield AI] Using synthetic training data (real data not found)")
@@ -174,6 +219,7 @@ class LandslideRiskPredictor:
 
         print(f"[GeoShield AI] Model trained on {n_samples} samples")
         print(f"[GeoShield AI] Train Accuracy: {train_acc:.3f}, Test Accuracy: {test_acc:.3f}")
+        self._save_model()
         return test_acc
 
     def predict_risk(self, sensor_data: dict, station_data: dict) -> dict:
@@ -182,15 +228,16 @@ class LandslideRiskPredictor:
         Returns risk score, level, probability, and recommendations.
         """
         # Map sensor data to real training features
+        # Use station-specific values when available, otherwise use training-data medians
         features = np.array([[
             station_data.get("slope_angle", 20),  # slope
             station_data.get("elevation", 500),   # elevation
-            180,  # aspect (default)
+            station_data.get("aspect", 181),      # aspect (training median)
             sensor_data.get("rainfall_mm", 10),   # rainfall_daily
             sensor_data.get("rainfall_24h", sensor_data.get("rainfall_mm", 10) * 5),  # rainfall_7day
             station_data.get("vegetation_cover", 60) / 100,  # ndvi (0-1)
             sensor_data.get("soil_moisture", 40) / 100,  # soil_moisture (0-1)
-            5000,  # distance_to_road (default)
+            station_data.get("distance_to_road", 59915),  # distance_to_road (training median)
             datetime.now().month,  # month
         ]])
 
@@ -198,15 +245,64 @@ class LandslideRiskPredictor:
 
         # Get prediction probabilities
         probabilities = self.model.predict_proba(features_scaled)[0]
-        predicted_class = int(np.argmax(probabilities))
+        n_classes = len(probabilities)
 
-        risk_score = float(np.clip(
-            probabilities[1] * 33 + probabilities[2] * 66 + probabilities[3] * 100, 0, 100
-        ))
-        landslide_probability = float(probabilities[2] + probabilities[3])
+        if n_classes == 4:
+            # 4-class model: classes = [low, moderate, high, critical]
+            predicted_class = int(np.argmax(probabilities))
+            risk_score = float(np.clip(
+                probabilities[1] * 33 + probabilities[2] * 66 + probabilities[3] * 100, 0, 100
+            ))
+            landslide_probability = float(probabilities[2] + probabilities[3])
+            levels = ["low", "moderate", "high", "critical"]
+            risk_level = levels[predicted_class]
+            prob_dict = {
+                "low": round(float(probabilities[0]), 3),
+                "moderate": round(float(probabilities[1]), 3),
+                "high": round(float(probabilities[2]), 3),
+                "critical": round(float(probabilities[3]), 3),
+            }
+        else:
+            # Binary model: class 0 = no landslide, class 1 = landslide
+            # Map probability to 4-level risk via severity score from features
+            landslide_prob = float(probabilities[1])
 
-        levels = ["low", "moderate", "high", "critical"]
-        risk_level = levels[predicted_class]
+            # Compute severity from input features (same formula as training)
+            slope_sev = np.clip(features[0, 0] / 60, 0, 1)
+            rain_sev = np.clip(features[0, 3] / 20, 0, 1)
+            rain7_sev = np.clip(features[0, 4] / 60, 0, 1)
+            moisture_sev = np.clip(features[0, 6], 0, 1)
+            ndvi_sev = 1 - np.clip(features[0, 5], 0, 1)
+            elev_sev = np.clip((features[0, 1] - 500) / 2000, 0, 1)
+            severity = (
+                slope_sev * 0.25 + rain_sev * 0.20 + rain7_sev * 0.15 +
+                moisture_sev * 0.15 + ndvi_sev * 0.15 + elev_sev * 0.10
+            )
+
+            # Combined risk: blend landslide probability with severity
+            combined = landslide_prob * 0.6 + severity * 0.4
+
+            if combined < 0.25:
+                risk_level = "low"
+                risk_score = float(np.clip(combined * 100, 0, 24))
+            elif combined < 0.45:
+                risk_level = "moderate"
+                risk_score = float(np.clip(25 + (combined - 0.25) * 250, 25, 49))
+            elif combined < 0.65:
+                risk_level = "high"
+                risk_score = float(np.clip(50 + (combined - 0.45) * 250, 50, 74))
+            else:
+                risk_level = "critical"
+                risk_score = float(np.clip(75 + (combined - 0.65) * 166.7, 75, 100))
+
+            landslide_probability = landslide_prob
+            predicted_class = {"low": 0, "moderate": 1, "high": 2, "critical": 3}[risk_level]
+            prob_dict = {
+                "low": round(float(1 - landslide_prob), 3) if risk_level == "low" else 0.0,
+                "moderate": round(float(landslide_prob * 0.4), 3) if risk_level == "moderate" else 0.0,
+                "high": round(float(landslide_prob * 0.7), 3) if risk_level == "high" else 0.0,
+                "critical": round(float(landslide_prob * 0.9), 3) if risk_level == "critical" else 0.0,
+            }
 
         # Determine contributing factors
         factors = []
@@ -248,12 +344,7 @@ class LandslideRiskPredictor:
             "contributing_factors": factors,
             "predicted_time_window_hours": time_window,
             "recommendation": recommendation,
-            "probabilities": {
-                "low": round(float(probabilities[0]), 3),
-                "moderate": round(float(probabilities[1]), 3),
-                "high": round(float(probabilities[2]), 3),
-                "critical": round(float(probabilities[3]), 3),
-            },
+            "probabilities": prob_dict,
             "model_info": {
                 "type": "RF + GB Ensemble",
                 "training_samples": "2000+ real NER samples",

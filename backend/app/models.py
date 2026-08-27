@@ -88,8 +88,6 @@ class Alert(Base):
     nearby_villages = Column(Text)  # JSON string
     latitude = Column(Float)
     longitude = Column(Float)
-    sent_sms = Column(Boolean, default=False)
-    sent_push = Column(Boolean, default=False)
     created_at = Column(DateTime, server_default=func.now())
     acknowledged_at = Column(DateTime, nullable=True)
     resolved_at = Column(DateTime, nullable=True)
@@ -103,7 +101,6 @@ class CitizenReport(Base):
     description = Column(Text)
     latitude = Column(Float)
     longitude = Column(Float)
-    image_path = Column(String, nullable=True)
     reporter_name = Column(String, nullable=True)
     reporter_phone = Column(String, nullable=True)
     reporter_language = Column(String, default="en")

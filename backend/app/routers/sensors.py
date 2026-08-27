@@ -93,13 +93,13 @@ def get_station(station_id: str, db: Session = Depends(get_db)):
             "timestamp": r.timestamp.isoformat(),
         } for r in reversed(latest_readings)],
         "risk_assessment": {
-            "risk_level": risk.risk_level,
-            "risk_score": risk.risk_score,
-            "landslide_probability": risk.landslide_probability,
-            "contributing_factors": risk.contributing_factors,
-            "predicted_time_window_hours": risk.predicted_time_window,
-            "recommendation": risk.recommendation,
-            "timestamp": risk.timestamp.isoformat(),
+            "risk_level": risk.risk_level if risk else "low",
+            "risk_score": risk.risk_score if risk else 0,
+            "landslide_probability": risk.landslide_probability if risk else 0,
+            "contributing_factors": risk.contributing_factors if risk else '[]',
+            "predicted_time_window_hours": risk.predicted_time_window if risk else 168,
+            "recommendation": risk.recommendation if risk else 'Continue monitoring.',
+            "timestamp": risk.timestamp.isoformat() if risk and risk.timestamp else None,
         } if risk else None,
     }
 
