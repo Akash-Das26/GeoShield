@@ -194,4 +194,37 @@ export const simulateLandslide = (data: { station_id?: string; intensity?: strin
 export const simulateBatch = (count: number = 5) =>
   api.post(`/simulate/batch?count=${count}`);
 
+// Satellite
+export interface SatelliteStation {
+  id: string;
+  name: string;
+  state: string;
+  real_elevation: number;
+  real_soil_moisture_0_7cm: number;
+  real_soil_moisture_7_28cm: number;
+  real_soil_moisture_28_100cm: number;
+  real_soil_temperature: number;
+  real_rainfall_current: number;
+  real_rainfall_24h: number;
+  real_rainfall_7d: number;
+  real_temperature: number;
+  real_humidity: number;
+  real_wind_speed: number;
+  estimated_ndvi: number;
+}
+export interface SatelliteSummary {
+  total_stations: number;
+  elevation: { min: number; max: number; avg: number; unit: string };
+  soil_moisture_surface: { min: number; max: number; avg: number; unit: string };
+  rainfall_24h: { min: number; max: number; avg: number; total: number; unit: string };
+  rainfall_7d: { min: number; max: number; avg: number; total: number; unit: string };
+  ndvi: { min: number; max: number; avg: number; description: string };
+  temperature: { min: number; max: number; avg: number; unit: string };
+  humidity: { min: number; max: number; avg: number; unit: string };
+  data_source: string;
+}
+export const getSatelliteData = () => api.get<{ stations: SatelliteStation[]; total_stations: number }>('/satellite/data');
+export const getStationSatelliteData = (id: string) => api.get<SatelliteStation>(`/satellite/data/${id}`);
+export const getSatelliteSummary = () => api.get<SatelliteSummary>('/satellite/summary');
+
 export default api;

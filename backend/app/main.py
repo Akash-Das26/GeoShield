@@ -12,7 +12,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 
 from app.database import engine, Base, SessionLocal
-from app.routers import sensors, dashboard, alerts, reports, weather, simulator
+from app.routers import sensors, dashboard, alerts, reports, weather, simulator, satellite
 
 
 class ConnectionManager:
@@ -77,6 +77,7 @@ app.include_router(alerts.router)
 app.include_router(reports.router)
 app.include_router(weather.router)
 app.include_router(simulator.router)
+app.include_router(satellite.router)
 
 
 @app.get("/api/health")
