@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getStation, getStationHistory, getWeather, getStationSatelliteData, SatelliteStation } from '../services/api';
+import { getStation, getStationHistory, getWeather } from '../services/api';
 import { t } from '../i18n/translations';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -9,7 +9,6 @@ import {
 import {
   ArrowLeft, Radio, Mountain, Droplets, Thermometer,
   Activity, AlertTriangle, TrendingUp, ChevronRight,
-  Satellite, Leaf, CloudRain, Wind,
 } from 'lucide-react';
 
 const RISK_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -25,7 +24,6 @@ export default function StationDetail() {
   const [station, setStation] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [weather, setWeather] = useState<any>(null);
-  const [satellite, setSatellite] = useState<SatelliteStation | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState(24);
 
@@ -33,16 +31,14 @@ export default function StationDetail() {
     if (!stationId) return;
     const fetchData = async () => {
       try {
-        const [stationRes, historyRes, weatherRes, satRes] = await Promise.all([
+        const [stationRes, historyRes, weatherRes] = await Promise.all([
           getStation(stationId),
           getStationHistory(stationId, timeRange),
           getWeather(stationId),
-          getStationSatelliteData(stationId).catch(() => ({ data: null })),
         ]);
         setStation(stationRes.data);
         setHistory(historyRes.data);
         setWeather(weatherRes.data);
-        setSatellite(satRes.data);
       } catch (e) {
         console.error('Station fetch error:', e);
       } finally {
@@ -55,10 +51,7 @@ export default function StationDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-dark-400 text-sm">Loading station data...</p>
-        </div>
+        <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -67,13 +60,16 @@ export default function StationDetail() {
     return (
       <div className="p-8 text-center">
         <p className="text-dark-400">Station not found</p>
-        <button onClick={() => navigate(-1)} className="mt-4 text-green-400 hover:underline">Go Back</button>
+        <button onClick={() => navigate(-1)} className="mt-4 text-green-400 hover:underline">
+          Go Back
+        </button>
       </div>
     );
   }
 
   const { station: s, readings, risk_assessment: risk } = station;
   const riskStyle = RISK_COLORS[risk?.risk_level || 'low'] || RISK_COLORS.low;
+
   const latestReading = readings?.[readings.length - 1] || {};
 
   const sensorCards = [
@@ -93,7 +89,10 @@ export default function StationDetail() {
   return (
     <div className="p-6 space-y-6">
       {/* Back Button */}
-      <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-dark-400 hover:text-white transition-all">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 text-dark-400 hover:text-white transition-all"
+      >
         <ArrowLeft className="w-4 h-4" />
         <span className="text-sm">Back</span>
       </button>
@@ -106,7 +105,7 @@ export default function StationDetail() {
             {s.name}
           </h1>
           <p className="text-dark-400 text-sm mt-1">
-            {s.state} - {s.district} - {s.village} - ID: {s.station_id}
+            {s.state} • {s.district} • {s.village} • ID: {s.station_id}
           </p>
         </div>
         {risk && (
@@ -127,8 +126,8 @@ export default function StationDetail() {
         {[
           { label: t('elevation'), value: `${s.elevation}m`, icon: Mountain },
           { label: t('slopeAngle'), value: `${s.slope_angle}°`, icon: TrendingUp },
-          { label: t('soilType'), value: s.soil_type.replace('_', ' '), icon: Droplets },
-          { label: t('vegetationCover'), value: `${s.vegetation_cover}%`, icon: Leaf },
+          { label: t('soilType'), value: (s.soil_type || 'Unknown').replace('_', ' '), icon: Droplets },
+          { label: t('vegetationCover'), value: `${s.vegetation_cover}%`, icon: Droplets },
           { label: 'Status', value: 'Active', icon: Radio },
         ].map((item, i) => (
           <div key={i} className="glass rounded-xl p-3">
@@ -139,68 +138,6 @@ export default function StationDetail() {
         ))}
       </div>
 
-      {/* Real Satellite Data Section */}
-      {satellite && (
-        <div className="glass rounded-xl p-5 border border-blue-600/20">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center">
-              <Satellite className="w-4 h-4 text-blue-400" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-white">Real Satellite Data</h3>
-              <p className="text-xs text-dark-500">Live from Open-Meteo satellite APIs</p>
-            </div>
-            <span className="ml-auto px-2 py-0.5 rounded-full bg-green-600/20 text-green-400 text-[10px] font-bold border border-green-600/30">LIVE</span>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            <div className="p-3 rounded-lg bg-dark-800/50 border border-dark-700">
-              <Mountain className="w-4 h-4 text-blue-400 mb-1" />
-              <p className="text-[10px] text-dark-400">Real Elevation</p>
-              <p className="text-lg font-bold text-white">{satellite.real_elevation}<span className="text-xs text-dark-400">m</span></p>
-            </div>
-            <div className="p-3 rounded-lg bg-dark-800/50 border border-dark-700">
-              <Droplets className="w-4 h-4 text-emerald-400 mb-1" />
-              <p className="text-[10px] text-dark-400">Soil Moisture (0-7cm)</p>
-              <p className="text-lg font-bold text-white">{satellite.real_soil_moisture_0_7cm}<span className="text-xs text-dark-400"> m³/m³</span></p>
-            </div>
-            <div className="p-3 rounded-lg bg-dark-800/50 border border-dark-700">
-              <CloudRain className="w-4 h-4 text-blue-400 mb-1" />
-              <p className="text-[10px] text-dark-400">Rainfall 24h</p>
-              <p className="text-lg font-bold text-white">{satellite.real_rainfall_24h}<span className="text-xs text-dark-400">mm</span></p>
-            </div>
-            <div className="p-3 rounded-lg bg-dark-800/50 border border-dark-700">
-              <CloudRain className="w-4 h-4 text-cyan-400 mb-1" />
-              <p className="text-[10px] text-dark-400">Rainfall 7 days</p>
-              <p className="text-lg font-bold text-white">{satellite.real_rainfall_7d}<span className="text-xs text-dark-400">mm</span></p>
-            </div>
-            <div className="p-3 rounded-lg bg-dark-800/50 border border-dark-700">
-              <Leaf className="w-4 h-4 text-green-400 mb-1" />
-              <p className="text-[10px] text-dark-400">NDVI (Vegetation)</p>
-              <p className="text-lg font-bold text-white">{satellite.estimated_ndvi}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-dark-800/50 border border-dark-700">
-              <Thermometer className="w-4 h-4 text-red-400 mb-1" />
-              <p className="text-[10px] text-dark-400">Temperature</p>
-              <p className="text-lg font-bold text-white">{satellite.real_temperature}<span className="text-xs text-dark-400">°C</span></p>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-3 mt-3">
-            <div className="p-2 rounded-lg bg-dark-800/50 border border-dark-700">
-              <p className="text-[10px] text-dark-400">Soil Moisture 7-28cm</p>
-              <p className="text-sm font-bold text-white">{satellite.real_soil_moisture_7_28cm} m³/m³</p>
-            </div>
-            <div className="p-2 rounded-lg bg-dark-800/50 border border-dark-700">
-              <p className="text-[10px] text-dark-400">Humidity</p>
-              <p className="text-sm font-bold text-white">{satellite.real_humidity}%</p>
-            </div>
-            <div className="p-2 rounded-lg bg-dark-800/50 border border-dark-700">
-              <p className="text-[10px] text-dark-400">Wind Speed</p>
-              <p className="text-sm font-bold text-white">{satellite.real_wind_speed} km/h</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Risk Assessment */}
       {risk && (
         <div className="glass rounded-xl p-5 border border-dark-700">
@@ -209,13 +146,14 @@ export default function StationDetail() {
             AI Risk Assessment
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Risk Score Circle */}
+            {/* Risk Score */}
             <div className="text-center">
               <div className="relative inline-block">
                 <svg className="w-32 h-32" viewBox="0 0 120 120">
                   <circle cx="60" cy="60" r="50" fill="none" stroke="#334155" strokeWidth="10" />
                   <circle
-                    cx="60" cy="60" r="50" fill="none"
+                    cx="60" cy="60" r="50"
+                    fill="none"
                     stroke={risk.risk_level === 'critical' ? '#ef4444' : risk.risk_level === 'high' ? '#f97316' : risk.risk_level === 'moderate' ? '#f59e0b' : '#22c55e'}
                     strokeWidth="10"
                     strokeDasharray={`${risk.risk_score * 3.14} 314`}
@@ -334,8 +272,7 @@ export default function StationDetail() {
       {weather?.data && (
         <div className="glass rounded-xl p-5">
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
-            <Wind className="w-4 h-4 text-blue-400" />
-            Weather Conditions
+            ☁️ Weather Conditions
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {[

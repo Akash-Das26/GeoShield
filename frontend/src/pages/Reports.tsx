@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react';
 import { getReports, submitReport, Report } from '../services/api';
 import { t } from '../i18n/translations';
 import {
-  FileText, Upload, MapPin, CheckCircle, Clock, XCircle, Camera, Send, AlertTriangle,
+  FileText, MapPin, CheckCircle, Clock, Send,
 } from 'lucide-react';
 
-const REPORT_TYPES = [
-  { value: 'crack', label: t('crack'), icon: '🔍' },
-  { value: 'slope_movement', label: t('slopeMovement'), icon: '⛰️' },
-  { value: 'blocked_road', label: t('blockedRoad'), icon: '🛣️' },
-  { value: 'flooding', label: t('flooding'), icon: '🌊' },
-  { value: 'other', label: t('other'), icon: '📌' },
+const REPORT_TYPE_KEYS = [
+  { value: 'crack', labelKey: 'crack', icon: '🔍' },
+  { value: 'slope_movement', labelKey: 'slopeMovement', icon: '⛰️' },
+  { value: 'blocked_road', labelKey: 'blockedRoad', icon: '🛣️' },
+  { value: 'flooding', labelKey: 'flooding', icon: '🌊' },
+  { value: 'other', labelKey: 'other', icon: '📌' },
 ];
 
 export default function Reports() {
@@ -28,7 +28,6 @@ export default function Reports() {
   const [formLng, setFormLng] = useState('');
   const [formName, setFormName] = useState('');
   const [formPhone, setFormPhone] = useState('');
-  const [formImage, setFormImage] = useState<File | null>(null);
 
   const fetchReports = async () => {
     try {
@@ -57,7 +56,6 @@ export default function Reports() {
       formData.append('longitude', formLng || '92.5');
       if (formName) formData.append('reporter_name', formName);
       if (formPhone) formData.append('reporter_phone', formPhone);
-      if (formImage) formData.append('image', formImage);
 
       await submitReport(formData);
       setSuccess(true);
@@ -69,7 +67,6 @@ export default function Reports() {
         setFormLng('');
         setFormName('');
         setFormPhone('');
-        setFormImage(null);
         fetchReports();
       }, 2000);
     } catch (e) {
@@ -141,7 +138,8 @@ export default function Reports() {
               <div>
                 <label className="text-xs text-dark-400 mb-1 block">Report Type *</label>
                 <div className="grid grid-cols-5 gap-2">
-                  {REPORT_TYPES.map((type) => (
+                  {REPORT_TYPE_KEYS.map((type) => (
+                    // NOTE: t() is called at render time, not module load time
                     <button
                       key={type.value}
                       type="button"
@@ -153,7 +151,7 @@ export default function Reports() {
                       }`}
                     >
                       <span className="block text-lg mb-1">{type.icon}</span>
-                      {type.label}
+                      {t(type.labelKey)}
                     </button>
                   ))}
                 </div>
@@ -224,21 +222,6 @@ export default function Reports() {
                 </div>
               </div>
 
-              {/* Photo Upload */}
-              <div>
-                <label className="text-xs text-dark-400 mb-1 block">{t('uploadPhoto')}</label>
-                <label className="flex items-center gap-2 px-4 py-3 rounded-lg bg-dark-800 border border-dashed border-dark-600 text-dark-400 hover:text-white hover:border-green-600/50 cursor-pointer transition-all">
-                  <Camera className="w-5 h-5" />
-                  <span className="text-sm">{formImage ? formImage.name : 'Choose photo...'}</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => setFormImage(e.target.files?.[0] || null)}
-                  />
-                </label>
-              </div>
-
               {/* Actions */}
               <div className="flex gap-3 pt-2">
                 <button
@@ -300,7 +283,7 @@ export default function Reports() {
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">
-                    {REPORT_TYPES.find(t => t.value === report.report_type)?.icon || '📌'}
+                    {REPORT_TYPE_KEYS.find(rt => rt.value === report.report_type)?.icon || '📌'}
                   </span>
                   <div>
                     <h4 className="text-sm font-semibold text-white capitalize">{report.report_type.replace('_', ' ')}</h4>

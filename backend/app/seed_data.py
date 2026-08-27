@@ -248,6 +248,10 @@ def seed_database():
     finally:
         db.close()
 
+    # Generate 48h risk history so the Risk Trend chart has data on first boot
+    from app.seed_risk_history import seed_risk_history
+    seed_risk_history()
+
 
 if __name__ == "__main__":
     seed_database()

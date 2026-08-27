@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, and_
+from sqlalchemy.orm import subqueryload
 from datetime import datetime, timedelta
 from app.database import get_db
 from app.models import (
@@ -9,6 +10,21 @@ from app.models import (
 )
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
+
+
+def _get_latest_risk_subquery(db: Session):
+    """Subquery to get latest risk assessment per station."""
+    return db.query(
+        RiskAssessment.station_id,
+        RiskAssessment.risk_level,
+        RiskAssessment.risk_score,
+        RiskAssessment.landslide_probability,
+        RiskAssessment.timestamp,
+        func.row_number().over(
+            partition_by=RiskAssessment.station_id,
+            order_by=RiskAssessment.timestamp.desc()
+        ).label('rn')
+    ).subquery()
 
 
 @router.get("/stats")
@@ -79,14 +95,29 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
 
 @router.get("/risk-heatmap")
 def get_risk_heatmap(db: Session = Depends(get_db)):
+    # Get latest risk assessment per station using a subquery
+    latest_risk_sq = db.query(
+        RiskAssessment.station_id,
+        RiskAssessment.risk_level,
+        RiskAssessment.risk_score,
+        RiskAssessment.timestamp,
+        func.row_number().over(
+            partition_by=RiskAssessment.station_id,
+            order_by=RiskAssessment.timestamp.desc()
+        ).label('rn')
+    ).subquery()
+
+    latest_risks = db.query(latest_risk_sq).filter(latest_risk_sq.c.rn == 1).all()
+
+    # Create a dict for quick lookup
+    risk_map = {r.station_id: r for r in latest_risks}
+
+    # Single query for all active stations
     stations = db.query(SensorStation).filter(SensorStation.is_active == True).all()
+
     heatmap_data = []
-
     for station in stations:
-        risk = db.query(RiskAssessment).filter(
-            RiskAssessment.station_id == station.station_id
-        ).order_by(desc(RiskAssessment.timestamp)).first()
-
+        risk = risk_map.get(station.station_id)
         if risk:
             heatmap_data.append({
                 "lat": station.latitude,
@@ -146,13 +177,29 @@ def get_risk_trend(db: Session = Depends(get_db)):
 
 @router.get("/state-summary")
 def get_state_summary(db: Session = Depends(get_db)):
+    # Get latest risk assessment per station using a subquery
+    latest_risk_sq = db.query(
+        RiskAssessment.station_id,
+        RiskAssessment.risk_level,
+        RiskAssessment.risk_score,
+        RiskAssessment.timestamp,
+        func.row_number().over(
+            partition_by=RiskAssessment.station_id,
+            order_by=RiskAssessment.timestamp.desc()
+        ).label('rn')
+    ).subquery()
+
+    latest_risks = db.query(latest_risk_sq).filter(latest_risk_sq.c.rn == 1).all()
+
+    # Create a dict for quick lookup
+    risk_map = {r.station_id: r for r in latest_risks}
+
+    # Single query for all active stations
     stations = db.query(SensorStation).filter(SensorStation.is_active == True).all()
 
     state_data = {}
     for s in stations:
-        risk = db.query(RiskAssessment).filter(
-            RiskAssessment.station_id == s.station_id
-        ).order_by(desc(RiskAssessment.timestamp)).first()
+        risk = risk_map.get(s.station_id)
 
         if s.state not in state_data:
             state_data[s.state] = {

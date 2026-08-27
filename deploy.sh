@@ -24,14 +24,14 @@ echo "✅ Node.js: $(node --version)"
 echo ""
 echo "📦 Installing backend dependencies..."
 cd backend
-python3 -m pip install -r requirements.txt --quiet 2>/dev/null || pip install -r requirements.txt --quiet 2>/dev/null
+python3 -m pip install -r requirements.txt
 cd ..
 
 # Build frontend
 echo "📦 Building frontend..."
 cd frontend
-npm install --silent 2>/dev/null
-npx vite build --silent 2>/dev/null
+npm install
+npx vite build
 cd ..
 
 echo ""
