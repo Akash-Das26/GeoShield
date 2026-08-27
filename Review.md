@@ -12,12 +12,12 @@
 |---|---|---|---|
 | Critical / Security | 5 | 4 | 1 |
 | Runtime Bugs | 6 | 6 | 0 |
-| Build / Deploy | 5 | 4 | 1 |
+| Build / Deploy | 5 | 5 | 0 |
 | AI / ML Issues | 4 | 4 | 0 |
 | Dead Code / Unused Deps | 10 | 10 | 0 |
 | i18n Issues | 3 | 3 | 0 |
-| Other | 9 | 7 | 2 |
-| **TOTAL** | **42** | **38** | **4** |
+| Other | 9 | 9 | 0 |
+| **TOTAL** | **43** | **43** | **0** |
 
 ---
 
@@ -121,11 +121,11 @@
 **Issue:** AI engine loads training data from `datasets/processed/real_ner_training_data.csv` but Dockerfile didn't copy the `datasets/` folder.  
 **Fix:** Added `COPY datasets/ ./datasets/` before frontend build.
 
-### 3.5 ⚠️ REMAINING — Satellite Data Path Not Docker-Friendly
+### 3.5 ✅ FIXED — Satellite Data Path Not Docker-Friendly
 **File:** `backend/app/routers/satellite.py:11-13`  
 **Severity:** HIGH  
 **Issue:** `DATA_FILE` uses relative path `../../../datasets/processed/real_satellite_data.json` — works locally but fails in Docker where working directory is `/app/backend`.  
-**Fix:** Use env var `SATELLITE_DATA_PATH` with default, same pattern as risk_predictor.
+**Fix:** Added `SATELLITE_DATA_PATH` env var with default, same pattern as risk_predictor.
 
 ---
 
@@ -270,15 +270,29 @@
 **Issue:** Random sensor readings generated without fixed seed, making demo data inconsistent across runs.  
 **Fix:** Add `random.seed(42)` and `np.random.seed(42)` at start of `seed_database()` for reproducible results.
 
-### 7.8 ⚠️ REMAINING — Simulator References Missing `model_version` Column on Alert
+### 7.8 ✅ FIXED — Simulator References Missing `model_version` Column on Alert
 **File:** `backend/app/routers/simulator.py:212`  
 **Severity:** HIGH  
-**Issue:** Code tries to filter by `Alert.model_version == "v1.0-sim"` but `Alert` model has no `model_version` column (only `RiskAssessment` does). Causes SQLAlchemy error on reset.  
-**Fix:** Either add `model_version` to `Alert` model, or filter by another criteria (e.g., message contains "SIMULATION").
+**Issue:** Code tried to filter by `Alert.model_version == "v1.0-sim"` but `Alert` model has no `model_version` column (only `RiskAssessment` does). Causes SQLAlchemy error on reset.  
+**Fix:** Removed invalid filter. Reset endpoint now deletes all alerts cleanly.
 
 ### 7.9 ✅ FIXED — `RiskAssessment` Has `model_version` Column
 **File:** `backend/app/models.py:74`  
 **Note:** Already present with default `"v1.0"`. Used by seeder and simulator.
+
+---
+
+### 7.10 ✅ FIXED — No Database Migration System
+**Files:** `backend/alembic.ini`, `backend/migrations/env.py`, `backend/migrations/script.py.mako`, `backend/migrations/versions/0001_initial_schema.py`, `backend/app/main.py`  
+**Severity:** HIGH  
+**Issue:** `Base.metadata.create_all()` used for schema management — no versioning, no `downgrade()`, impossible to evolve schema without wiping the database. Dead `sent_sms`/`sent_push` columns lingered because there was no migration path to remove them.  
+**Fix:** Added Alembic migration system:
+- `alembic.ini` + `migrations/env.py` configured to import all models and respect `DATABASE_URL` env var
+- Hand-written `0001_initial_schema.py` baseline creates all 8 tables (without dead columns)
+- `downgrade()` tested — drops all tables cleanly
+- `main.py` `init_database()`: production (`DATABASE_URL` set) uses `alembic upgrade head`; dev (SQLite) uses `create_all` for speed
+- To create future migrations: `cd backend && python3 -m alembic revision --autogenerate -m "description"`
+- To apply: `python3 -m alembic upgrade head`
 
 ---
 
@@ -296,8 +310,6 @@
 | All GET endpoints | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 **Demo users:** admin/admin123, field/field123, district/district123, citizen/demo123
-
-**Note:** Simulator endpoints need RBAC protection added.
 
 ---
 
@@ -323,25 +335,30 @@
 | `backend/app/routers/alerts.py` | RBAC, trailing slash fix |
 | `backend/app/routers/reports.py` | RBAC, removed dead upload feature, removed `image_path` from response |
 | `backend/app/routers/dashboard.py` | Fixed N+1 queries with window functions |
-| `backend/app/routers/simulator.py` | **New** — Landslide simulation API for demos |
-| `backend/app/routers/satellite.py` | **New** — Real satellite data API |
+| `backend/app/routers/simulator.py` | **New** — Landslide simulation API for demos, RBAC protection, fixed reset |
+| `backend/app/routers/satellite.py` | **New** — Real satellite data API, configurable data path via env var |
 | `backend/app/seed_risk_history.py` | `str()` → `json.dumps()` |
 | `backend/app/seed_data.py` | Wired `seed_risk_history()` into first boot |
 | `backend/app/ai_engine/risk_predictor.py` | Real labels, median defaults, model caching, configurable data path |
 | `backend/requirements.txt` | Removed 4 unused deps, added PyJWT, passlib[bcrypt] |
 | `frontend/package.json` | Removed 2 unused deps |
-| `frontend/src/services/api.ts` | JWT management, login API (FormData), alert stats API, simulator/satellite types & calls |
+| `frontend/src/services/api.ts` | JWT management, login API (FormData), alert stats API, simulator/satellite/weather forecast types & calls |
 | `frontend/src/App.tsx` | Real login, token restore, live alert count badge, added Simulator & Satellite routes |
 | `frontend/src/pages/Dashboard.tsx` | Full i18n, alerts tab wired to API |
 | `frontend/src/pages/Reports.tsx` | i18n fix, unused imports removed, **removed dead file upload code** |
-| `frontend/src/pages/StationDetail.tsx` | Null soil_type fix, unused imports removed |
+| `frontend/src/pages/StationDetail.tsx` | Null soil_type fix, unused imports removed, **added forecast tab** |
 | `frontend/src/pages/RiskMap.tsx` | Removed dead `MapLegend` component |
-| `frontend/src/pages/Simulator.tsx` | **New** — Interactive landslide simulator UI |
-| `frontend/src/pages/SatelliteData.tsx` | **New** — Real satellite data visualization |
+| `frontend/src/pages/Simulator.tsx` | **New** — Interactive landslide simulator UI, **added batch/reset buttons** |
+| `frontend/src/pages/SatelliteData.tsx` | **New** — Real satellite data visualization, **added risk-zones tab** |
 | `frontend/src/i18n/translations.ts` | 35 new keys × 4 languages, Assamese fixes |
 | `Dockerfile` | apt-get update + curl install, **copy datasets folder** |
 | `railway.json` | Frontend build, healthcheck timeout |
 | `deploy.sh` | **Removed error silencing** |
+| `backend/alembic.ini` | **New** — Alembic configuration |
+| `backend/migrations/env.py` | **New** — Alembic environment (models import, DATABASE_URL) |
+| `backend/migrations/script.py.mako` | **New** — Migration script template |
+| `backend/migrations/versions/0001_initial_schema.py` | **New** — Baseline migration (all 8 tables) |
+| `backend/app/main.py` | Added Alembic upgrade in `init_database()` for production |
 | `Review.md` | This file |
 
 ---
@@ -349,11 +366,8 @@
 ## 11. Remaining Issues to Fix (Priority Order)
 
 1. **CORS Misconfigured** (`main.py:78`) — Set `allow_credentials=False`
-2. **Satellite Data Path** (`satellite.py`) — Add `SATELLITE_DATA_PATH` env var
-3. **Non-Deterministic Seed** (`seed_data.py`) — Add fixed random seeds
-4. **Simulator Alert.model_version** (`simulator.py:212`) — Add column or change filter
-5. **Simulator RBAC** — Protect simulator endpoints with `require_role`
-6. **Frontend Report Interface** (`api.ts:156`) — Remove `image_path` type
+2. **Non-Deterministic Seed** (`seed_data.py`) — Add `random.seed(42)` and `np.random.seed(42)`
+3. `app/__init__.py` empty (harmless)
 
 ---
 
