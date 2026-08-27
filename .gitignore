@@ -116,11 +116,9 @@ yarn-error.log*
 frontend/dist/
 frontend/build/
 
-# Datasets (large files)
+# Datasets - keep real training data, ignore generated samples
 datasets/kaggle/
 datasets/satellite/
-datasets/processed/
-*.csv
 *.shp
 *.shx
 *.dbf

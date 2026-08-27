@@ -1,0 +1,11 @@
+Date,Location,State,District,Latitude,Longitude,Cause,Casualties,Damage,Source
+2024-06-15,Tadong,Sikkim,Gangtok,27.3389,88.6065,Heavy Rain,0,Road Blocked,News
+2024-07-22,Mawlynnong,Meghalaya,East Khasi Hills,25.2592,91.7276,Heavy Rain,0,Minor,News
+2024-08-05,Rangpo,Sikkim,East Sikkim,27.2833,88.5333,Heavy Rain,0,Highway Blocked,News
+2024-08-12,Haflong,Assam,Dima Hasao,25.45,93.18,Heavy Rain,1,Major,News
+2024-09-01,Tawang,Arunachal Pradesh,Tawang,27.586,91.88,Heavy Rain,0,Road Damaged,News
+2025-06-18,Cherrapunji,Meghalaya,East Khasi Hills,25.2838,91.7344,Extreme Rain,2,Severe,IMD
+2025-07-05,Aizawl,Mizoram,Aizawl,23.7271,92.7176,Heavy Rain,0,Moderate,News
+2025-08-10,Kohima,Nagaland,Kohima,25.6586,94.1086,Heavy Rain,0,Minor,News
+2025-09-15,Lunglei,Mizoram,Lunglei,22.9,92.75,Heavy Rain,0,Road Blocked,News
+2026-06-20,Ziro,Arunachal Pradesh,Lower Subansiri,27.5887,93.8492,Heavy Rain,0,Minor,News

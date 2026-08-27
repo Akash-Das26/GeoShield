@@ -3,7 +3,7 @@
 ### AI-Based Early Warning & Landslide Risk Monitoring System for North Eastern Region
 
 <p align="center">
-  <img src="frontend/public/favicon.svg" width="120" alt="GeoShield Logo">
+  <img src="branding/team_logo.png" width="200" alt="Team GeoShield Logo">
 </p>
 
 <p align="center">

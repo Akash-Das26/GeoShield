@@ -1,4 +1,9 @@
 # 🏆 GeoShield — SIH 2026 Presentation Deck
+
+<p align="center">
+  <img src="branding/team_logo.png" width="150" alt="Team GeoShield Logo">
+</p>
+
 ## Team GeoShield | Problem Statement SIH26001 | MDoNER
 
 ---
