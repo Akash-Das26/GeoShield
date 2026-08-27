@@ -100,8 +100,11 @@ if os.path.exists(os.path.join(FRONTEND_DIR, "assets")):
     app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="assets")
 
 if os.path.exists(FRONTEND_DIR):
-    @app.get("/{full_path:path}")
+    @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_frontend(full_path: str):
+        # Skip API and WebSocket routes - let FastAPI handle them
+        if full_path.startswith("api/") or full_path.startswith("ws"):
+            return {"message": "Not found", "version": "1.0.0"}
         # Serve static files if they exist
         file_path = os.path.join(FRONTEND_DIR, full_path)
         if full_path and os.path.isfile(file_path):
