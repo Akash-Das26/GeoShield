@@ -23,14 +23,14 @@ Theme: Disaster Management
 
 ## 👥 Slide 2: Team GeoShield
 
-| Name | Roll No | Role |
-|------|---------|------|
-| **Arghya Bose** | 24155380 | Team Lead / Full-Stack Developer |
-| **Arindam Tripathi** | 24155614 | Backend & AI/ML Engineer |
-| **Arnab Pal** | 24155615 | Frontend Developer |
-| **Aaditree Shreya** | 24155371 | Data Engineer & Research |
-| **Ankan Nag** | 2405791 | IoT & Sensor Integration |
-| **Akash Das** | 24155155 | Testing & Deployment |
+| Name | Roll No |
+|------|----------|
+| **Arghya Bose** | 24155380 |
+| **Arindam Tripathi** | 24155614 |
+| **Arnab Pal** | 24155615 |
+| **Aaditree Shreya** | 24155371 |
+| **Ankan Nag** | 2405791 |
+| **Akash Das** | 24155155 |
 
 ---
 
