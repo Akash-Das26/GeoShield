@@ -7,7 +7,7 @@ import {
 } from '../services/api';
 import { t } from '../i18n/translations';
 import { MapPin, Navigation, AlertTriangle, Building2 } from 'lucide-react';
-import 'leaflet/dist/leaflet.css';
+
 
 const RISK_COLORS: Record<string, string> = {
   low: '#22c55e',
@@ -42,6 +42,7 @@ export default function RiskMap() {
   const [showVillages, setShowVillages] = useState(true);
   const [showStations, setShowStations] = useState(true);
   const [selectedStation, setSelectedStation] = useState<string | null>(null);
+  const [tileError, setTileError] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,7 +84,7 @@ export default function RiskMap() {
             }`}
           >
             <Navigation className="w-3 h-3 inline mr-1" />
-            Stations ({stations.length})
+            {t('stationsWithCount')} ({stations.length})
           </button>
           <button
             onClick={() => setShowRoads(!showRoads)}
@@ -91,7 +92,7 @@ export default function RiskMap() {
               showRoads ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'bg-dark-800 text-dark-400 border border-dark-700'
             }`}
           >
-            🛣️ Roads
+            🛣️ {t('mapRoads')}
           </button>
           <button
             onClick={() => setShowVillages(!showVillages)}
@@ -100,22 +101,25 @@ export default function RiskMap() {
             }`}
           >
             <Building2 className="w-3 h-3 inline mr-1" />
-            Villages
+            {t('mapVillages')}
           </button>
         </div>
       </div>
 
       {/* Map */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative" style={{ minHeight: '500px' }}>
         <MapContainer
           center={NER_CENTER}
           zoom={7}
           className="h-full w-full"
           style={{ background: '#1e293b' }}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/">OSM</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        >          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            className="dark-tiles"
+            eventHandlers={{
+              tileerror: () => setTileError(true),
+            }}
           />
 
           {/* Risk Heatmap Circles */}
@@ -139,13 +143,13 @@ export default function RiskMap() {
                     point.risk_level === 'high' ? 'text-orange-600' :
                     point.risk_level === 'moderate' ? 'text-yellow-600' : 'text-green-600'
                   }`}>
-                    Risk: {point.risk_score}/100 ({point.risk_level.toUpperCase()})
+                    {t('riskScore')}: {point.risk_score}/100 ({point.risk_level.toUpperCase()})
                   </p>
                   <button
                     onClick={() => navigate(`/station/${point.station_id}`)}
                     className="mt-2 text-xs text-blue-600 hover:underline"
                   >
-                    View Details →
+                    {t('viewDetails')} →
                   </button>
                 </div>
               </Popup>
@@ -169,7 +173,7 @@ export default function RiskMap() {
                     road.status === 'blocked' ? 'text-red-600' :
                     road.status === 'partially_blocked' ? 'text-yellow-600' : 'text-green-600'
                   }`}>
-                    Status: {road.status.replace('_', ' ').toUpperCase()}
+                    {t('statusLabel')}: {road.status.replace('_', ' ').toUpperCase()}
                   </p>
                   {road.blockage_reason && (
                     <p className="text-xs text-gray-500 mt-1">{road.blockage_reason}</p>
@@ -195,12 +199,12 @@ export default function RiskMap() {
                 <div className="text-sm">
                   <p className="font-bold">{village.name}</p>
                   <p className="text-gray-500">{village.state} • {village.district}</p>
-                  <p className="mt-1">👥 Population: {village.population.toLocaleString()}</p>
+                  <p className="mt-1">👥 {t('populationLabel')}: {village.population.toLocaleString()}</p>
                   <p className={`font-bold ${
                     village.risk_zone.includes('high') ? 'text-red-600' :
                     village.risk_zone.includes('medium') ? 'text-yellow-600' : 'text-green-600'
                   }`}>
-                    Zone: {village.risk_zone.replace('_', ' ').toUpperCase()}
+                    {t('zoneLabel')}: {village.risk_zone.replace('_', ' ').toUpperCase()}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     🏥 {village.nearest_hospital_km}km | 🚔 {village.nearest_police_km}km
@@ -211,33 +215,41 @@ export default function RiskMap() {
           ))}
         </MapContainer>
 
+        {/* Tile Error Banner */}
+        {tileError && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-amber-600/90 text-white text-xs px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+            ⚠️ {t('failedToLoad')}
+            <button onClick={() => setTileError(false)} className="ml-2 underline">{t('dismiss')}</button>
+          </div>
+        )}
+
         {/* Legend */}
         <div className="absolute bottom-4 left-4 z-[1000] glass rounded-xl p-3">
-          <p className="text-xs font-semibold text-white mb-2">Risk Legend</p>
+          <p className="text-xs font-semibold text-white mb-2">{t('riskLegend')}</p>
           <div className="space-y-1">
             {[
-              { level: 'Low', color: RISK_COLORS.low },
-              { level: 'Moderate', color: RISK_COLORS.moderate },
-              { level: 'High', color: RISK_COLORS.high },
-              { level: 'Critical', color: RISK_COLORS.critical },
-            ].map(({ level, color }) => (
-              <div key={level} className="flex items-center gap-2">
+              { key: 'lowLevel', color: RISK_COLORS.low },
+              { key: 'moderateLevel', color: RISK_COLORS.moderate },
+              { key: 'highLevel', color: RISK_COLORS.high },
+              { key: 'criticalLevel', color: RISK_COLORS.critical },
+            ].map(({ key, color }) => (
+              <div key={key} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                <span className="text-xs text-dark-300">{level}</span>
+                <span className="text-xs text-dark-300">{t(key)}</span>
               </div>
             ))}
           </div>
           <div className="mt-2 pt-2 border-t border-dark-700">
-            <p className="text-xs font-semibold text-white mb-1">Roads</p>
+            <p className="text-xs font-semibold text-white mb-1">{t('mapRoads')}</p>
             <div className="space-y-1">
               {[
-                { label: 'Open', color: ROAD_COLORS.open },
-                { label: 'Partial', color: ROAD_COLORS.partially_blocked },
-                { label: 'Blocked', color: ROAD_COLORS.blocked },
-              ].map(({ label, color }) => (
-                <div key={label} className="flex items-center gap-2">
+                { key: 'open', color: ROAD_COLORS.open },
+                { key: 'partiallyBlocked', color: ROAD_COLORS.partially_blocked },
+                { key: 'blocked', color: ROAD_COLORS.blocked },
+              ].map(({ key, color }) => (
+                <div key={key} className="flex items-center gap-2">
                   <div className="w-4 h-0.5" style={{ backgroundColor: color }} />
-                  <span className="text-xs text-dark-300">{label}</span>
+                  <span className="text-xs text-dark-300">{t(key)}</span>
                 </div>
               ))}
             </div>

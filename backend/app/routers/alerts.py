@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from datetime import datetime
 from app.database import get_db
 from app.models import Alert
 from app.auth import get_current_user, require_role
+from app.translations import translate_alert
 
 router = APIRouter(prefix="/api/alerts", tags=["alerts"])
 
@@ -14,6 +15,7 @@ def get_alerts(
     status: str = None,
     risk_level: str = None,
     limit: int = 50,
+    lang: str = Query("en", description="Language code"),
     db: Session = Depends(get_db)
 ):
     query = db.query(Alert)
@@ -28,8 +30,8 @@ def get_alerts(
         "id": a.id,
         "station_id": a.station_id,
         "risk_level": a.risk_level,
-        "title": a.title,
-        "message": a.message,
+        "title": translate_alert(a.title, a.message, lang)[0],
+        "message": translate_alert(a.title, a.message, lang)[1],
         "status": a.status,
         "affected_population": a.affected_population,
         "latitude": a.latitude,

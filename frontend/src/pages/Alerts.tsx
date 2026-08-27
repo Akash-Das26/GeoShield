@@ -67,17 +67,17 @@ export default function Alerts() {
             <Bell className="w-6 h-6 text-red-400" />
             {t('alerts')}
           </h1>
-          <p className="text-dark-400 text-sm mt-1">Early Warning System for Landslide Events</p>
+          <p className="text-dark-400 text-sm mt-1">{t('earlyWarningSystem')}</p>
         </div>
       </div>
 
       {/* Alert Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Alerts', value: stats.total, icon: Bell, color: 'from-blue-500 to-cyan-500' },
-          { label: 'Active', value: stats.active, icon: Radio, color: stats.active > 0 ? 'from-red-500 to-orange-500' : 'from-green-500 to-emerald-500', pulse: stats.active > 0 },
-          { label: 'Critical', value: stats.critical, icon: AlertTriangle, color: 'from-red-600 to-red-500' },
-          { label: 'High Risk', value: stats.high, icon: AlertTriangle, color: 'from-orange-500 to-amber-500' },
+          { label: t('totalAlerts'), value: stats.total, icon: Bell, color: 'from-blue-500 to-cyan-500' },
+          { label: t('active'), value: stats.active, icon: Radio, color: stats.active > 0 ? 'from-red-500 to-orange-500' : 'from-green-500 to-emerald-500', pulse: stats.active > 0 },
+          { label: t('criticalRisk'), value: stats.critical, icon: AlertTriangle, color: 'from-red-600 to-red-500' },
+          { label: t('highRisk'), value: stats.high, icon: AlertTriangle, color: 'from-orange-500 to-amber-500' },
         ].map((card, i) => (
           <div key={i} className={`glass rounded-xl p-4 ${card.pulse ? 'pulse-alert' : ''}`}>
             <div className="flex items-center gap-2 mb-2">
@@ -105,7 +105,7 @@ export default function Alerts() {
                   : 'bg-dark-800 text-dark-400 border border-dark-700 hover:text-white'
               }`}
             >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
+              {status === 'all' ? t('all') : status === 'active' ? t('active') : status === 'acknowledged' ? t('acknowledgedCount') : t('resolvedCount')}
             </button>
           ))}
         </div>
@@ -121,7 +121,7 @@ export default function Alerts() {
                   : 'bg-dark-800 text-dark-400 border border-dark-700 hover:text-white'
               }`}
             >
-              {level === 'all' ? 'All Levels' : level.charAt(0).toUpperCase() + level.slice(1)}
+              {level === 'all' ? t('allLevels') : level === 'critical' ? t('criticalLevel') : level === 'high' ? t('highLevel') : level === 'moderate' ? t('moderateLevel') : t('lowLevel')}
             </button>
           ))}
         </div>
@@ -135,7 +135,7 @@ export default function Alerts() {
       ) : alerts.length === 0 ? (
         <div className="text-center py-12">
           <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-          <p className="text-dark-400">No alerts found for the selected filters.</p>
+          <p className="text-dark-400">{t('noAlertsFound')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -167,8 +167,7 @@ export default function Alerts() {
                           {alert.affected_population > 0 && (
                             <span className="flex items-center gap-1">
                               <Users className="w-3 h-3" />
-                              {alert.affected_population.toLocaleString()} people
-                            </span>
+                              {alert.affected_population.toLocaleString()} {t('people')}</span>
                           )}
                         </div>
                       </div>
@@ -198,12 +197,12 @@ export default function Alerts() {
                     )}
                     {alert.status === 'acknowledged' && (
                       <span className="px-3 py-1.5 rounded-lg bg-amber-600/10 text-amber-400 border border-amber-600/20 text-xs font-medium">
-                        ⏳ Acknowledged
+                        ⏳ {t('acknowledgedCount')}
                       </span>
                     )}
                     {alert.status === 'resolved' && (
                       <span className="px-3 py-1.5 rounded-lg bg-green-600/10 text-green-400 border border-green-600/20 text-xs font-medium">
-                        ✅ Resolved
+                        ✅ {t('resolvedCount')}
                       </span>
                     )}
                   </div>
