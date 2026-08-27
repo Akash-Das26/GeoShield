@@ -301,7 +301,7 @@ Score Range    │ Risk Level   │ Action Required
 | Tracked Villages | **18** | 6 high-risk |
 | Citizens at Risk | **8,087** | 🚨 Alert needed |
 | Citizen Reports | **15** | 8 pending |
-| Average Risk Score | **29.6** / 100 | 🟡 Moderate |
+| Average Risk Score | **43.0** / 100 | 🟡 Moderate |
 
 ### Risk Distribution Across 20 Stations
 
@@ -379,21 +379,21 @@ Score Range    │ Risk Level   │ Action Required
 | 3 | NER-003 | Namchi Valley Watch | Sikkim | 1315m | 35° | 🟡 19.0 |
 | 4 | NER-004 | Guwahati Foothills | Assam | 550m | 28° | 🟢 9.2 |
 | 5 | NER-005 | Karbi Anglong Slope | Assam | 680m | 32° | 🟢 4.7 |
-| 6 | NER-006 | Imphal Valley Edge | Manipur | 786m | 36° | 🟡 25.9 |
-| 7 | NER-007 | Churachandpur Hills | Manipur | 915m | 40° | 🟠 31.8 |
-| 8 | NER-008 | Aizawl Ridge Monitor | Mizoram | 1080m | 44° | 🟡 21.6 |
+| 6 | NER-006 | Imphal Valley Edge | Manipur | 786m | 36° | 🟡 23.3 |
+| 7 | NER-007 | Churachandpur Hills | Manipur | 915m | 40° | 🟡 28.4 |
+| 8 | NER-008 | Aizawl Ridge Monitor | Mizoram | 1080m | 44° | 🟡 24.9 |
 | 9 | NER-009 | Lunglei Slope Watch | Mizoram | 720m | 38° | 🟢 18.2 |
-| 10 | NER-010 | Shillong Plateau Edge | Meghalaya | 1490m | 30° | 🟢 12.4 |
-| 11 | NER-011 | Cherrapunji Monitor | Meghalaya | 1430m | 33° | 🟢 8.7 |
-| 12 | NER-012 | Tura Hills Watch | Meghalaya | 650m | 29° | 🟢 7.3 |
+| 10 | NER-010 | Shillong Plateau Edge | Meghalaya | 1490m | 30° | 🟢 1.2 |
+| 11 | NER-011 | Cherrapunji Monitor | Meghalaya | 1430m | 33° | 🟡 25.5 |
+| 12 | NER-012 | Tura Hills Watch | Meghalaya | 650m | 29° | 🟢 1.7 |
 | 13 | NER-013 | Kohima Ridge | Nagaland | 1444m | 37° | 🟠 71.0 |
 | 14 | NER-014 | Dimapur Lowlands | Nagaland | 196m | 12° | 🔴 81.2 |
 | 15 | NER-015 | Agartala Slope Monitor | Tripura | 120m | 15° | 🟠 67.3 |
 | 16 | NER-016 | Itanagar Foothills | Arunachal | 320m | 25° | 🟡 44.5 |
-| 17 | NER-017 | Ziro Valley Watch | Arunachal | 1688m | 30° | 🟡 30.2 |
-| 18 | NER-018 | Pasighat Monitor | Arunachal | 155m | 18° | 🟢 15.8 |
-| 19 | NER-019 | Tawang Ridge | Arunachal | 3048m | 48° | 🟡 22.1 |
-| 20 | NER-020 | Dima Hasao Watch | Assam | 680m | 41° | 🟢 14.4 |
+| 17 | NER-017 | Ziro Valley Watch | Arunachal | 1688m | 30° | 🟢 11.0 |
+| 18 | NER-018 | Pasighat Monitor | Arunachal | 155m | 18° | 🟡 28.3 |
+| 19 | NER-019 | Tawang Ridge | Arunachal | 3048m | 48° | 🟡 28.2 |
+| 20 | NER-020 | Dima Hasao Watch | Assam | 680m | 41° | 🟡 24.6 |
 
 ### Sensor Data Per Station (Per Reading)
 
