@@ -75,8 +75,8 @@ export default function Dashboard() {
         <div className="text-center">
           <div className="w-20 h-20 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
           <div className="space-y-2">
-            <p className="text-white font-semibold text-lg">Initializing GeoShield</p>
-            <p className="text-dark-400 text-sm">Connecting to sensor network...</p>
+            <p className="text-white font-semibold text-lg">{t('initializing')}</p>
+            <p className="text-dark-400 text-sm">{t('connectingSensors')}</p>
             <div className="flex items-center justify-center gap-2 mt-4">
               <div className="flex gap-1">
                 {[0, 1, 2].map(i => (
@@ -90,13 +90,13 @@ export default function Dashboard() {
     );
   }
 
-  if (!stats) return <div className="p-8 text-dark-400">Failed to load dashboard data</div>;
+  if (!stats) return <div className="p-8 text-dark-400">{t('failedToLoad')}</div>;
 
   const riskPieData = [
-    { name: 'Low', value: stats.risk_distribution.low, color: RISK_COLORS.low },
-    { name: 'Moderate', value: stats.risk_distribution.moderate, color: RISK_COLORS.moderate },
-    { name: 'High', value: stats.risk_distribution.high, color: RISK_COLORS.high },
-    { name: 'Critical', value: stats.risk_distribution.critical, color: RISK_COLORS.critical },
+    { name: t('lowRisk'), value: stats.risk_distribution.low, color: RISK_COLORS.low },
+    { name: t('moderateRisk'), value: stats.risk_distribution.moderate, color: RISK_COLORS.moderate },
+    { name: t('highRisk'), value: stats.risk_distribution.high, color: RISK_COLORS.high },
+    { name: t('criticalRisk'), value: stats.risk_distribution.critical, color: RISK_COLORS.critical },
   ].filter(d => d.value > 0);
 
   const radarData = stateData.map(s => ({
@@ -110,12 +110,12 @@ export default function Dashboard() {
     .slice(0, 5);
 
   const statCards = [
-    { label: 'Active Sensors', value: stats.total_stations, icon: Radio, color: 'from-blue-500 to-cyan-500', textColor: 'text-blue-400', sub: `${stats.active_stations} online` },
-    { label: 'Active Alerts', value: stats.active_alerts, icon: AlertTriangle, color: stats.active_alerts > 0 ? 'from-red-500 to-orange-500' : 'from-green-500 to-emerald-500', textColor: stats.active_alerts > 0 ? 'text-red-400' : 'text-green-400', pulse: stats.active_alerts > 0, sub: 'requires attention' },
-    { label: 'People at Risk', value: stats.affected_population.toLocaleString(), icon: Users, color: 'from-purple-500 to-pink-500', textColor: 'text-purple-400', sub: 'across NER' },
-    { label: 'Pending Reports', value: stats.pending_reports, icon: FileText, color: 'from-amber-500 to-yellow-500', textColor: 'text-amber-400', sub: `${stats.recent_reports_24h} in 24h` },
-    { label: 'Avg Risk Score', value: stats.average_risk_score.toFixed(1), icon: TrendingUp, color: 'from-rose-500 to-red-500', textColor: 'text-rose-400', sub: 'out of 100' },
-    { label: 'High-Risk Villages', value: stats.high_risk_villages, icon: MapPin, color: 'from-orange-500 to-red-500', textColor: 'text-orange-400', sub: `of ${stats.total_villages} total` },
+    { label: t('activeSensors'), value: stats.total_stations, icon: Radio, color: 'from-blue-500 to-cyan-500', textColor: 'text-blue-400', sub: `${stats.active_stations} ${t('online')}` },
+    { label: t('activeAlerts'), value: stats.active_alerts, icon: AlertTriangle, color: stats.active_alerts > 0 ? 'from-red-500 to-orange-500' : 'from-green-500 to-emerald-500', textColor: stats.active_alerts > 0 ? 'text-red-400' : 'text-green-400', pulse: stats.active_alerts > 0, sub: t('requiresAttention') },
+    { label: t('peopleAtRisk'), value: stats.affected_population.toLocaleString(), icon: Users, color: 'from-purple-500 to-pink-500', textColor: 'text-purple-400', sub: t('acrossNER') },
+    { label: t('pendingReports'), value: stats.pending_reports, icon: FileText, color: 'from-amber-500 to-yellow-500', textColor: 'text-amber-400', sub: `${stats.recent_reports_24h} ${t('in24h')}` },
+    { label: t('averageRisk'), value: stats.average_risk_score.toFixed(1), icon: TrendingUp, color: 'from-rose-500 to-red-500', textColor: 'text-rose-400', sub: t('outOf100') },
+    { label: t('highRiskVillages'), value: stats.high_risk_villages, icon: MapPin, color: 'from-orange-500 to-red-500', textColor: 'text-orange-400', sub: `of ${stats.total_villages} total` },
   ];
 
   const formatTime = (ts: string) => {
@@ -144,10 +144,10 @@ export default function Dashboard() {
   const getTimeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 60) return `${mins}m`;
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
+    if (hrs < 24) return `${hrs}h`;
+    return `${Math.floor(hrs / 24)}d`;
   };
 
   const handleAcknowledge = async (id: number) => {
@@ -177,7 +177,7 @@ export default function Dashboard() {
             <Shield className="w-8 h-8 text-green-400" />
             <div>
               <h1 className="text-2xl font-bold text-white">{t('dashboard')}</h1>
-              <p className="text-dark-400 text-sm">North Eastern Region Landslide Risk Monitoring</p>
+              <p className="text-dark-400 text-sm">{t('regionSubtitle')}</p>
             </div>
           </div>
         </div>
@@ -241,10 +241,10 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-white">{t('rainfallTrend')}</h3>
-                    <p className="text-xs text-dark-500">48h average across all stations</p>
+                    <p className="text-xs text-dark-500">{t('avgAcrossStations')}</p>
                   </div>
                 </div>
-                <span className="text-xs text-dark-500">{rainfall.length} data points</span>
+                <span className="text-xs text-dark-500">{rainfall.length} {t('dataPoints')}</span>
               </div>
               <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={rainfall.slice(-48)}>
@@ -271,7 +271,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">{t('riskDistribution')}</h3>
-                  <p className="text-xs text-dark-500">Across {stats.total_stations} stations</p>
+                  <p className="text-xs text-dark-500">{t('mmAcrossStations').replace('{n}', String(stats.total_stations))}</p>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={180}>
@@ -315,7 +315,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">{t('riskTrend')}</h3>
-                  <p className="text-xs text-dark-500">48h average risk score</p>
+                  <p className="text-xs text-dark-500">{t('avgAcrossStations')}</p>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={180}>
@@ -344,14 +344,14 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">{t('roadStatus')}</h3>
-                  <p className="text-xs text-dark-500">{stats.road_status.open + stats.road_status.partially_blocked + stats.road_status.blocked} roads monitored</p>
+                  <p className="text-xs text-dark-500">{t('roadsMonitored').replace('{n}', String(stats.road_status.open + stats.road_status.partially_blocked + stats.road_status.blocked))}</p>
                 </div>
               </div>
               <div className="space-y-4 mt-2">
                 {[
-                  { label: 'Open', value: stats.road_status.open, color: 'bg-green-500', textColor: 'text-green-400', pct: 100 },
-                  { label: 'Partially Blocked', value: stats.road_status.partially_blocked, color: 'bg-amber-500', textColor: 'text-amber-400', pct: 60 },
-                  { label: 'Blocked', value: stats.road_status.blocked, color: 'bg-red-500', textColor: 'text-red-400', pct: 30 },
+                  { label: t('openLabel'), value: stats.road_status.open, color: 'bg-green-500', textColor: 'text-green-400', pct: 100 },
+                  { label: t('partiallyBlockedLabel'), value: stats.road_status.partially_blocked, color: 'bg-amber-500', textColor: 'text-amber-400', pct: 60 },
+                  { label: t('blockedLabel'), value: stats.road_status.blocked, color: 'bg-red-500', textColor: 'text-red-400', pct: 30 },
                 ].map((item, i) => (
                   <div key={i}>
                     <div className="flex justify-between text-xs mb-1.5">
@@ -359,7 +359,7 @@ export default function Dashboard() {
                         <div className={`w-2 h-2 rounded-full ${item.color}`} />
                         {item.label}
                       </span>
-                      <span className={`font-semibold ${item.textColor}`}>{item.value} roads</span>
+                      <span className={`font-semibold ${item.textColor}`}>{t('roadsCount').replace('{n}', String(item.value))}</span>
                     </div>
                     <div className="h-2 bg-dark-800 rounded-full overflow-hidden">
                       <div className={`h-full ${item.color} rounded-full transition-all duration-1000`} style={{ width: `${Math.max(item.pct, item.value * 20)}%` }} />
@@ -372,8 +372,8 @@ export default function Dashboard() {
                   <Zap className={`w-4 h-4 ${stats.road_status.blocked > 0 ? 'text-red-400' : 'text-green-400'}`} />
                   <span className="text-xs text-dark-300">
                     {stats.road_status.blocked > 0
-                      ? `${stats.road_status.blocked} road(s) blocked - alt routes recommended`
-                      : 'All major routes accessible'}
+                      ? t('roadBlockedAlt').replace('{n}', String(stats.road_status.blocked))
+                      : t('allRoutesAccessible')}
                   </span>
                 </div>
               </div>
@@ -387,7 +387,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">{t('stateSummary')}</h3>
-                  <p className="text-xs text-dark-500">8 NER states monitored</p>
+                  <p className="text-xs text-dark-500">{t('nerStatesMonitored')}</p>
                 </div>
               </div>
               <div className="space-y-2">
@@ -400,7 +400,7 @@ export default function Dashboard() {
                       }`} />
                       <div>
                         <p className="text-xs font-medium text-white">{state.state}</p>
-                        <p className="text-[10px] text-dark-500">{state.stations} stations</p>
+                        <p className="text-[10px] text-dark-500">{t('stationsCount').replace('{n}', String(state.stations))}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -412,7 +412,7 @@ export default function Dashboard() {
                       </span>
                       {state.critical_count > 0 && (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-600/20 text-red-400 border border-red-600/30">
-                          {state.critical_count} CRIT
+                          {state.critical_count} {t('crit')}
                         </span>
                       )}
                     </div>
@@ -430,8 +430,8 @@ export default function Dashboard() {
                   <Target className="w-4 h-4 text-purple-400" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">State Risk Radar</h3>
-                  <p className="text-xs text-dark-500">Comparative risk across NER states</p>
+                  <h3 className="text-sm font-semibold text-white">{t('stateRiskRadar')}</h3>
+                  <p className="text-xs text-dark-500">{t('comparativeRisk')}</p>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={250}>
@@ -451,8 +451,8 @@ export default function Dashboard() {
                   <AlertCircle className="w-4 h-4 text-red-400" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Top Risk Stations</h3>
-                  <p className="text-xs text-dark-500">Highest risk score locations</p>
+                  <h3 className="text-sm font-semibold text-white">{t('topRiskStations')}</h3>
+                  <p className="text-xs text-dark-500">{t('highestRiskLocations')}</p>
                 </div>
               </div>
               <div className="space-y-3">
@@ -536,7 +536,7 @@ export default function Dashboard() {
                   <div className="text-center p-1.5 rounded-lg bg-dark-800/50">
                     <TrendingUp className="w-3 h-3 text-orange-400 mx-auto mb-0.5" />
                     <p className="text-xs font-bold text-white">{station.slope_angle}°</p>
-                    <p className="text-[9px] text-dark-500">slope</p>
+                    <p className="text-[9px] text-dark-500">{t('slope')}</p>
                   </div>
                 </div>
                 {/* Risk bar */}
@@ -548,7 +548,7 @@ export default function Dashboard() {
                   }`} style={{ width: `${riskScore}%` }} />
                 </div>
                 <div className="flex justify-between mt-1">
-                  <span className="text-[9px] text-dark-500">Risk Score</span>
+                  <span className="text-[9px] text-dark-500">{t('riskScore')}</span>
                   <span className="text-[9px] text-dark-400 font-medium">{riskScore}/100</span>
                 </div>
               </div>
@@ -620,20 +620,20 @@ export default function Dashboard() {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <Radio className="w-3 h-3 text-green-400" />
-            <span className="text-[10px] text-dark-400">{stats.active_stations} sensors online</span>
+            <span className="text-[10px] text-dark-400">{stats.active_stations} {t('sensorsOnline')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <AlertTriangle className="w-3 h-3 text-red-400" />
-            <span className="text-[10px] text-dark-400">{stats.active_alerts} active alerts</span>
+            <span className="text-[10px] text-dark-400">{stats.active_alerts} {t('activeAlertsCount')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Building2 className="w-3 h-3 text-purple-400" />
-            <span className="text-[10px] text-dark-400">{stats.total_villages} villages monitored</span>
+            <span className="text-[10px] text-dark-400">{stats.total_villages} {t('villagesMonitored')}</span>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
           <Clock className="w-3 h-3 text-dark-500" />
-          <span className="text-[10px] text-dark-500">Last update: {new Date(stats.last_updated).toLocaleTimeString()}</span>
+          <span className="text-[10px] text-dark-500">{t('lastUpdate')}: {new Date(stats.last_updated).toLocaleTimeString()}</span>
         </div>
       </div>
     </div>

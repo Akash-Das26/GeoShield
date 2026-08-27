@@ -8,12 +8,14 @@ import {
   Users, Clock, MapPin, RefreshCw, XCircle,
 } from 'lucide-react';
 
-const INTENSITY_CONFIG = {
-  low: { label: 'Low Intensity', color: 'from-green-500 to-emerald-500', textColor: 'text-green-400', borderColor: 'border-green-600/30', description: 'Minor rainfall event, low displacement' },
-  moderate: { label: 'Moderate', color: 'from-amber-500 to-yellow-500', textColor: 'text-amber-400', borderColor: 'border-amber-600/30', description: 'Heavy rainfall, noticeable ground movement' },
-  high: { label: 'High Intensity', color: 'from-orange-500 to-red-500', textColor: 'text-orange-400', borderColor: 'border-orange-600/30', description: 'Extreme rainfall, significant displacement' },
-  critical: { label: 'CRITICAL', color: 'from-red-600 to-red-500', textColor: 'text-red-400', borderColor: 'border-red-600/30', description: 'Catastrophic event, immediate evacuation needed' },
-};
+function useIntensityConfig() {
+  return {
+    low: { label: t('lowIntensity'), color: 'from-green-500 to-emerald-500', textColor: 'text-green-400', borderColor: 'border-green-600/30', description: t('lowIntensityDesc2') },
+    moderate: { label: t('moderateIntensity'), color: 'from-amber-500 to-yellow-500', textColor: 'text-amber-400', borderColor: 'border-amber-600/30', description: t('moderateIntensityDesc2') },
+    high: { label: t('highIntensity'), color: 'from-orange-500 to-red-500', textColor: 'text-orange-400', borderColor: 'border-orange-600/30', description: t('highIntensityDesc2') },
+    critical: { label: t('criticalIntensity'), color: 'from-red-600 to-red-500', textColor: 'text-red-400', borderColor: 'border-red-600/30', description: t('criticalIntensityDesc2') },
+  };
+}
 
 export default function Simulator() {
   const [stations, setStations] = useState<Station[]>([]);
@@ -23,6 +25,7 @@ export default function Simulator() {
   const [batchLoading, setBatchLoading] = useState(false);
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [history, setHistory] = useState<SimulationResult[]>([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     getStations().then(res => {
@@ -38,6 +41,7 @@ export default function Simulator() {
   const handleSimulate = async () => {
     setLoading(true);
     setResult(null);
+    setError('');
     try {
       const res = await simulateLandslide({
         station_id: selectedStation || undefined,
@@ -45,7 +49,9 @@ export default function Simulator() {
       });
       setResult(res.data);
       setHistory(prev => [res.data, ...prev].slice(0, 10));
-    } catch (e) {
+    } catch (e: any) {
+      const msg = e.response?.data?.detail || e.message || t('simFailed');
+      setError(msg);
       console.error('Simulation error:', e);
     } finally {
       setLoading(false);
@@ -54,6 +60,7 @@ export default function Simulator() {
 
   const handleBatchSimulate = async () => {
     setBatchLoading(true);
+    setError('');
     try {
       const res = await simulateBatch(5);
       const results = res.data.results;
@@ -61,7 +68,9 @@ export default function Simulator() {
         setResult(results[0]);
         setHistory(prev => [...results, ...prev].slice(0, 10));
       }
-    } catch (e) {
+    } catch (e: any) {
+      const msg = e.response?.data?.detail || e.message || t('batchFailed');
+      setError(msg);
       console.error('Batch simulation error:', e);
     } finally {
       setBatchLoading(false);
@@ -69,12 +78,15 @@ export default function Simulator() {
   };
 
   const handleReset = async () => {
-    if (!window.confirm('Clear all simulation alerts and history?')) return;
+    if (!window.confirm(t('confirmClearHistory'))) return;
+    setError('');
     try {
       await resetSimulation();
       setHistory([]);
       setResult(null);
-    } catch (e) {
+    } catch (e: any) {
+      const msg = e.response?.data?.detail || e.message || t('resetFailed');
+      setError(msg);
       console.error('Reset error:', e);
     }
   };
@@ -86,16 +98,30 @@ export default function Simulator() {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Zap className="w-6 h-6 text-yellow-400" />
-            Landslide Simulator
+            {t('landslideSimulator')}
           </h1>
           <p className="text-dark-400 text-sm mt-1">
-            Simulate landslide events for live demonstration
+            {t('simulateLandslideDesc')}
           </p>
         </div>
         <div className="px-3 py-1.5 rounded-full bg-yellow-600/10 border border-yellow-600/20">
-          <span className="text-xs text-yellow-400 font-medium">DEMO MODE</span>
+          <span className="text-xs text-yellow-400 font-medium">{t('demoMode')}</span>
         </div>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-red-400">{t('errorLabel')}</p>
+            <p className="text-xs text-red-400/70 mt-0.5">{error}</p>
+          </div>
+          <button onClick={() => setError('')} className="text-red-400 hover:text-red-300">
+            <XCircle className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -103,14 +129,14 @@ export default function Simulator() {
         <div className="glass rounded-xl p-5">
           <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
             <MapPin className="w-4 h-4 text-blue-400" />
-            Select Station
+            {t('selectStation')}
           </h3>
           <select
             value={selectedStation}
             onChange={(e) => setSelectedStation(e.target.value)}
             className="w-full px-4 py-2.5 rounded-xl bg-dark-800 border border-dark-700 text-white text-sm focus:outline-none focus:border-green-600/50 transition-all"
           >
-            <option value="">Auto-select (random high-risk)</option>
+            <option value="">{t('autoSelectHighRisk')}</option>
             {stations.map(s => (
               <option key={s.station_id} value={s.station_id}>
                 {s.name} ({s.state}) - Slope: {s.slope_angle}&deg;
@@ -128,11 +154,11 @@ export default function Simulator() {
                     <p className="text-[10px] text-dark-500">{s.state} - {s.district}</p>
                     <div className="grid grid-cols-2 gap-2 mt-2">
                       <div className="text-center p-1 rounded bg-dark-900/50">
-                        <p className="text-[10px] text-dark-400">Elevation</p>
+                        <p className="text-[10px] text-dark-400">{t('elevation')}</p>
                         <p className="text-xs font-bold text-white">{s.elevation}m</p>
                       </div>
                       <div className="text-center p-1 rounded bg-dark-900/50">
-                        <p className="text-[10px] text-dark-400">Slope</p>
+                        <p className="text-[10px] text-dark-400">{t('slope')}</p>
                         <p className="text-xs font-bold text-white">{s.slope_angle}&deg;</p>
                       </div>
                     </div>
@@ -147,13 +173,13 @@ export default function Simulator() {
         <div className="glass rounded-xl p-5">
           <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
             <Activity className="w-4 h-4 text-orange-400" />
-            Event Intensity
+            {t('eventIntensity')}
           </h3>
           <div className="space-y-2">
-            {(Object.entries(INTENSITY_CONFIG) as [keyof typeof INTENSITY_CONFIG, typeof INTENSITY_CONFIG[keyof typeof INTENSITY_CONFIG]][]).map(([key, config]) => (
+            {(Object.entries(useIntensityConfig()) as [string, { label: string; color: string; textColor: string; borderColor: string; description: string }][]).map(([key, config]) => (
               <button
                 key={key}
-                onClick={() => setIntensity(key)}
+                onClick={() => setIntensity(key as any)}
                 className={`w-full p-3 rounded-xl text-left transition-all ${
                   intensity === key
                     ? `bg-gradient-to-r ${config.color} bg-opacity-10 border ${config.borderColor}`
@@ -180,11 +206,10 @@ export default function Simulator() {
         <div className="glass rounded-xl p-5 flex flex-col">
           <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
             <Play className="w-4 h-4 text-green-400" />
-            Run Simulation
+            {t('runSimulation')}
           </h3>
           <p className="text-xs text-dark-400 mb-4">
-            This will create a simulated landslide event with spiked sensor readings,
-            AI risk assessment, and generate alerts for the selected station.
+            {t('runSimulationDesc')}
           </p>
           <div className="space-y-2">
             <button
@@ -205,7 +230,7 @@ export default function Simulator() {
               ) : (
                 <>
                   <Zap className="w-5 h-5" />
-                  {intensity === 'critical' ? 'TRIGGER CRITICAL EVENT' : 'Run Simulation'}
+                  {intensity === 'critical' ? t('triggerCriticalEvent') : t('submit')}
                 </>
               )}
             </button>
@@ -219,7 +244,7 @@ export default function Simulator() {
               ) : (
                 <>
                   <RefreshCw className="w-4 h-4" />
-                  Run Batch (5 stations)
+                  {t('runBatch')}
                 </>
               )}
             </button>
@@ -229,12 +254,12 @@ export default function Simulator() {
               className="w-full py-2 rounded-xl font-medium text-xs transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-dark-800 border border-dark-700 text-dark-400 hover:text-white hover:border-red-600/30"
             >
               <XCircle className="w-4 h-4" />
-              Reset All Simulations
+              {t('resetAllSimulations')}
             </button>
           </div>
           <div className="mt-4 space-y-1.5">
-            <p className="text-[10px] text-dark-500 font-medium">What happens:</p>
-            {['Spike in sensor readings', 'AI risk assessment runs', 'Alert generated if risk >= moderate', 'Dashboard updates in real-time'].map((item, i) => (
+            <p className="text-[10px] text-dark-500 font-medium">{t('whatHappens')}</p>
+            {[t('spikeInSensors'), t('aiRiskRuns'), t('alertGenerated'), t('dashboardUpdates')].map((item, i) => (
               <div key={i} className="flex items-center gap-1.5 text-[10px] text-dark-400">
                 <ChevronRight className="w-3 h-3 text-green-500" />
                 {item}
@@ -249,46 +274,46 @@ export default function Simulator() {
         <div className="glass rounded-xl p-6 border border-green-600/20 animate-fade-in">
           <div className="flex items-center gap-2 mb-4">
             <Shield className="w-5 h-5 text-green-400" />
-            <h3 className="text-lg font-semibold text-white">Simulation Result</h3>
+            <h3 className="text-lg font-semibold text-white">{t('simulationResult')}</h3>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Station Info */}
             <div>
-              <h4 className="text-xs text-dark-400 mb-2 font-medium">SIMULATED STATION</h4>
+              <h4 className="text-xs text-dark-400 mb-2 font-medium">{t('simulatedStation')}</h4>
               <div className="p-3 rounded-lg bg-dark-800/50 border border-dark-700">
                 <p className="text-sm font-semibold text-white">{result.simulation.station.name}</p>
                 <p className="text-[10px] text-dark-500">{result.simulation.station.state} - {result.simulation.station.district}</p>
                 <p className="text-[10px] text-dark-400 mt-1">Intensity: {result.simulation.intensity.toUpperCase()}</p>
               </div>
-              <h4 className="text-xs text-dark-400 mb-2 mt-3 font-medium">SENSOR SPIKE</h4>
+              <h4 className="text-xs text-dark-400 mb-2 mt-3 font-medium">{t('sensorSpike')}</h4>
               <div className="grid grid-cols-2 gap-2">
                 <div className="p-2 rounded-lg bg-dark-800/50 text-center">
                   <Droplets className="w-3 h-3 text-blue-400 mx-auto mb-0.5" />
                   <p className="text-xs font-bold text-white">{result.simulation.sensor_reading.rainfall_mm}mm</p>
-                  <p className="text-[9px] text-dark-500">Rainfall</p>
+                  <p className="text-[9px] text-dark-500">{t('rainfall')}</p>
                 </div>
                 <div className="p-2 rounded-lg bg-dark-800/50 text-center">
                   <Activity className="w-3 h-3 text-emerald-400 mx-auto mb-0.5" />
                   <p className="text-xs font-bold text-white">{result.simulation.sensor_reading.soil_moisture}%</p>
-                  <p className="text-[9px] text-dark-500">Moisture</p>
+                  <p className="text-[9px] text-dark-500">{t('soilMoistureLabel')}</p>
                 </div>
                 <div className="p-2 rounded-lg bg-dark-800/50 text-center">
                   <Mountain className="w-3 h-3 text-orange-400 mx-auto mb-0.5" />
                   <p className="text-xs font-bold text-white">{result.simulation.sensor_reading.ground_displacement}mm</p>
-                  <p className="text-[9px] text-dark-500">Displacement</p>
+                  <p className="text-[9px] text-dark-500">{t('groundDisplacement')}</p>
                 </div>
                 <div className="p-2 rounded-lg bg-dark-800/50 text-center">
                   <TrendingUp className="w-3 h-3 text-purple-400 mx-auto mb-0.5" />
                   <p className="text-xs font-bold text-white">{result.simulation.sensor_reading.pore_pressure}kPa</p>
-                  <p className="text-[9px] text-dark-500">Pore Pressure</p>
+                  <p className="text-[9px] text-dark-500">{t('porePressure')}</p>
                 </div>
               </div>
             </div>
 
             {/* Risk Assessment */}
             <div>
-              <h4 className="text-xs text-dark-400 mb-2 font-medium">AI RISK ASSESSMENT</h4>
+              <h4 className="text-xs text-dark-400 mb-2 font-medium">{t('aiRiskAssessment')}</h4>
               <div className="text-center mb-3">
                 <div className="relative inline-block">
                   <svg className="w-28 h-28" viewBox="0 0 120 120">
@@ -317,11 +342,11 @@ export default function Simulator() {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="text-dark-400">Probability</span>
+                  <span className="text-dark-400">{t('probability')}</span>
                   <span className="text-white font-medium">{(result.risk_assessment.landslide_probability * 100).toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-dark-400">Time Window</span>
+                  <span className="text-dark-400">{t('timeWindow')}</span>
                   <span className="text-white font-medium">{result.risk_assessment.time_window_hours}h</span>
                 </div>
               </div>
@@ -331,7 +356,7 @@ export default function Simulator() {
             <div>
               {result.alert && (
                 <>
-                  <h4 className="text-xs text-dark-400 mb-2 font-medium">GENERATED ALERT</h4>
+                  <h4 className="text-xs text-dark-400 mb-2 font-medium">{t('generatedAlert')}</h4>
                   <div className="p-3 rounded-lg bg-red-600/10 border border-red-600/30 mb-3">
                     <p className="text-sm font-semibold text-white">{result.alert.title}</p>
                     <p className="text-xs text-dark-400 mt-1 flex items-center gap-1">
@@ -341,7 +366,7 @@ export default function Simulator() {
                   </div>
                 </>
               )}
-              <h4 className="text-xs text-dark-400 mb-2 font-medium">CONTRIBUTING FACTORS</h4>
+              <h4 className="text-xs text-dark-400 mb-2 font-medium">{t('contributingFactors')}</h4>
               <div className="space-y-1">
                 {result.risk_assessment.contributing_factors.map((factor, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs text-orange-400">
@@ -350,7 +375,7 @@ export default function Simulator() {
                   </div>
                 ))}
               </div>
-              <h4 className="text-xs text-dark-400 mb-1 mt-3 font-medium">RECOMMENDATION</h4>
+              <h4 className="text-xs text-dark-400 mb-1 mt-3 font-medium">{t('recommendation')}</h4>
               <p className="text-xs text-dark-300">{result.risk_assessment.recommendation}</p>
             </div>
           </div>
@@ -376,11 +401,11 @@ export default function Simulator() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-dark-400 border-b border-dark-700">
-                  <th className="text-left py-2 font-medium">Station</th>
-                  <th className="text-left py-2 font-medium">Intensity</th>
-                  <th className="text-left py-2 font-medium">Risk Score</th>
-                  <th className="text-left py-2 font-medium">Level</th>
-                  <th className="text-left py-2 font-medium">Alert</th>
+                  <th className="text-left py-2 font-medium">{t('stationLabel2')}</th>
+                  <th className="text-left py-2 font-medium">{t('intensityLabel')}</th>
+                  <th className="text-left py-2 font-medium">{t('riskScore')}</th>
+                  <th className="text-left py-2 font-medium">{t('levelLabel')}</th>
+                  <th className="text-left py-2 font-medium">{t('alertLabel')}</th>
                 </tr>
               </thead>
               <tbody>

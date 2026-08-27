@@ -27,21 +27,22 @@ class LandslideRequest(BaseModel):
     custom_moisture: Optional[float] = None
 
 
-@router.post("/landslide")
-def simulate_landslide(request: LandslideRequest, db: Session = Depends(get_db), user: dict = Depends(require_role("admin", "field_officer", "district_admin"))):
+# ── Core simulation logic (called by all endpoints) ─────────────────
+def _run_simulation(db: Session, station_id: Optional[str], intensity: str,
+                    custom_rainfall: Optional[float] = None,
+                    custom_moisture: Optional[float] = None) -> dict:
     """
-    Simulate a landslide event at a station.
-    Creates spike in sensor readings, generates risk assessment, creates alert.
+    Core landslide simulation logic, extracted so that both the /landslide
+    and /batch endpoints can share it without breaking FastAPI DI.
     """
     # Pick a station
-    if request.station_id:
+    if station_id:
         station = db.query(SensorStation).filter(
-            SensorStation.station_id == request.station_id
+            SensorStation.station_id == station_id
         ).first()
         if not station:
             raise HTTPException(status_code=404, detail="Station not found")
     else:
-        # Pick a random high-risk station
         high_risk_stations = db.query(SensorStation).filter(
             SensorStation.slope_angle > 35
         ).all()
@@ -56,10 +57,10 @@ def simulate_landslide(request: LandslideRequest, db: Session = Depends(get_db),
         "high": {"rainfall": 100, "moisture": 85, "displacement": 12, "tilt": 4},
         "critical": {"rainfall": 180, "moisture": 95, "displacement": 25, "tilt": 8},
     }
-    params = intensity_params.get(request.intensity, intensity_params["high"])
+    params = intensity_params.get(intensity, intensity_params["high"])
 
-    rainfall = request.custom_rainfall or params["rainfall"] + random.uniform(-10, 10)
-    moisture = request.custom_moisture or params["moisture"] + random.uniform(-5, 5)
+    rainfall = custom_rainfall or params["rainfall"] + random.uniform(-10, 10)
+    moisture = custom_moisture or params["moisture"] + random.uniform(-5, 5)
 
     # Create spiked sensor reading
     reading = SensorReading(
@@ -95,11 +96,11 @@ def simulate_landslide(request: LandslideRequest, db: Session = Depends(get_db),
     result = predictor.predict_risk(sensor_data, station_data)
 
     # Force higher risk based on intensity
-    if request.intensity == "critical":
+    if intensity == "critical":
         result["risk_score"] = max(result["risk_score"], 90)
         result["risk_level"] = "critical"
         result["landslide_probability"] = max(result["landslide_probability"], 0.85)
-    elif request.intensity == "high":
+    elif intensity == "high":
         result["risk_score"] = max(result["risk_score"], 70)
         result["risk_level"] = "high" if result["risk_level"] == "low" else result["risk_level"]
         result["landslide_probability"] = max(result["landslide_probability"], 0.65)
@@ -158,7 +159,7 @@ def simulate_landslide(request: LandslideRequest, db: Session = Depends(get_db),
                 "state": station.state,
                 "district": station.district,
             },
-            "intensity": request.intensity,
+            "intensity": intensity,
             "sensor_reading": {
                 "rainfall_mm": round(rainfall, 1),
                 "soil_moisture": round(moisture, 1),
@@ -182,6 +183,21 @@ def simulate_landslide(request: LandslideRequest, db: Session = Depends(get_db),
     }
 
 
+@router.post("/landslide")
+def simulate_landslide(request: LandslideRequest, db: Session = Depends(get_db), user: dict = Depends(require_role("admin", "field_officer", "district_admin"))):
+    """
+    Simulate a landslide event at a station.
+    Creates spike in sensor readings, generates risk assessment, creates alert.
+    """
+    return _run_simulation(
+        db=db,
+        station_id=request.station_id,
+        intensity=request.intensity,
+        custom_rainfall=request.custom_rainfall,
+        custom_moisture=request.custom_moisture,
+    )
+
+
 @router.post("/batch")
 def simulate_batch(count: int = 5, db: Session = Depends(get_db), user: dict = Depends(require_role("admin", "field_officer", "district_admin"))):
     """Simulate multiple landslide events across different stations."""
@@ -192,11 +208,11 @@ def simulate_batch(count: int = 5, db: Session = Depends(get_db), user: dict = D
 
     intensities = ["moderate", "high", "critical", "high", "moderate"]
     for i in range(min(count, len(stations))):
-        req = LandslideRequest(
+        result = _run_simulation(
+            db=db,
             station_id=stations[i % len(stations)].station_id,
             intensity=intensities[i % len(intensities)],
         )
-        result = simulate_landslide(req, db)
         results.append(result)
 
     return {
@@ -209,9 +225,14 @@ def simulate_batch(count: int = 5, db: Session = Depends(get_db), user: dict = D
 @router.post("/reset")
 def reset_simulations(db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
     """Reset all simulation data - clear alerts and recent readings. Admin only."""
-    # Delete all alerts (simulation and real)
-    from app.models import Alert as AlertModel
-    db.query(AlertModel).delete(synchronize_session=False)
+    # Delete simulation alerts and assessments
+    db.query(Alert).delete(synchronize_session=False)
+    db.query(RiskAssessment).filter(RiskAssessment.model_version == "v1.0-sim").delete(synchronize_session=False)
+    # Delete simulation sensor readings (keep seed readings with default model_version)
+    from datetime import timedelta
+    db.query(SensorReading).filter(
+        SensorReading.timestamp > datetime.utcnow() - timedelta(hours=1)
+    ).delete(synchronize_session=False)
     db.commit()
 
-    return {"status": "success", "message": "All alerts cleared. Restart server to re-seed."}
+    return {"status": "success", "message": "All simulation data cleared."}

@@ -65,9 +65,9 @@ export default function StationDetail() {
   if (!station) {
     return (
       <div className="p-8 text-center">
-        <p className="text-dark-400">Station not found</p>
+        <p className="text-dark-400">{t('stationNotFound')}</p>
         <button onClick={() => navigate(-1)} className="mt-4 text-green-400 hover:underline">
-          Go Back
+          {t('goBack')}
         </button>
       </div>
     );
@@ -82,8 +82,8 @@ export default function StationDetail() {
     { label: t('rainfall'), value: `${latestReading.rainfall_mm || 0} mm`, icon: Droplets, color: 'from-blue-500 to-cyan-500' },
     { label: t('soilMoisture'), value: `${latestReading.soil_moisture || 0}%`, icon: Droplets, color: 'from-emerald-500 to-teal-500' },
     { label: t('groundDisplacement'), value: `${latestReading.ground_displacement || 0} mm`, icon: Activity, color: 'from-amber-500 to-orange-500' },
-    { label: 'Pore Pressure', value: `${latestReading.pore_water_pressure || 0} kPa`, icon: TrendingUp, color: 'from-purple-500 to-pink-500' },
-    { label: 'Temperature', value: `${latestReading.soil_temperature || 0}°C`, icon: Thermometer, color: 'from-red-500 to-rose-500' },
+    { label: t('porePressure'), value: `${latestReading.pore_water_pressure || 0} kPa`, icon: TrendingUp, color: 'from-purple-500 to-pink-500' },
+    { label: t('temperatureLabel'), value: `${latestReading.soil_temperature || 0}°C`, icon: Thermometer, color: 'from-red-500 to-rose-500' },
   ];
 
   const formatTime = (ts: string) => {
@@ -100,7 +100,7 @@ export default function StationDetail() {
         className="flex items-center gap-2 text-dark-400 hover:text-white transition-all"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span className="text-sm">Back</span>
+        <span className="text-sm">{t('back')}</span>
       </button>
 
       {/* Station Header */}
@@ -134,7 +134,7 @@ export default function StationDetail() {
           { label: t('slopeAngle'), value: `${s.slope_angle}°`, icon: TrendingUp },
           { label: t('soilType'), value: (s.soil_type || 'Unknown').replace('_', ' '), icon: Droplets },
           { label: t('vegetationCover'), value: `${s.vegetation_cover}%`, icon: Droplets },
-          { label: 'Status', value: 'Active', icon: Radio },
+          { label: t('statusLabel'), value: t('activeStatusLabel'), icon: Radio },
         ].map((item, i) => (
           <div key={i} className="glass rounded-xl p-3">
             <item.icon className="w-4 h-4 text-dark-400 mb-1" />
@@ -172,25 +172,25 @@ export default function StationDetail() {
                   <p className="text-xs text-dark-400">/ 100</p>
                 </div>
               </div>
-              <p className={`text-sm font-medium mt-2 ${riskStyle.text}`}>{risk.risk_level.toUpperCase()} RISK</p>
+              <p className={`text-sm font-medium mt-2 ${riskStyle.text}`}>{risk.risk_level.toUpperCase()} {t('riskLabel')}</p>
             </div>
 
             {/* Details */}
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-dark-400">Landslide Probability</span>
+                <span className="text-dark-400">{t('landslideProbability')}</span>
                 <span className="text-white font-medium">{(risk.landslide_probability * 100).toFixed(1)}%</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-dark-400">Time Window</span>
+                <span className="text-dark-400">{t('timeWindow')}</span>
                 <span className="text-white font-medium">{risk.predicted_time_window_hours} {t('hours')}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-dark-400">Model Version</span>
+                <span className="text-dark-400">{t('modelVersion')}</span>
                 <span className="text-white font-medium">{risk.model_version}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-dark-400">Assessed At</span>
+                <span className="text-dark-400">{t('assessedAt')}</span>
                 <span className="text-white font-medium">{new Date(risk.timestamp).toLocaleString()}</span>
               </div>
             </div>
@@ -267,8 +267,8 @@ export default function StationDetail() {
               <XAxis dataKey="timestamp" tick={{ fontSize: 9, fill: '#94a3b8' }} tickFormatter={formatTime} />
               <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} />
               <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }} />
-              <Line type="monotone" dataKey="soil_moisture" stroke="#22c55e" strokeWidth={2} dot={false} name="Moisture %" />
-              <Line type="monotone" dataKey="ground_displacement" stroke="#f97316" strokeWidth={2} dot={false} name="Displacement mm" />
+              <Line type="monotone" dataKey="soil_moisture" stroke="#22c55e" strokeWidth={2} dot={false} name={t('moisturePercent')} />
+              <Line type="monotone" dataKey="ground_displacement" stroke="#f97316" strokeWidth={2} dot={false} name={t('displacementMm')} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -279,7 +279,7 @@ export default function StationDetail() {
         <div className="glass rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              ☁️ Weather
+              ☁️ {t('weatherLabel')}
             </h3>
             <div className="flex bg-dark-800 rounded-lg p-1 border border-dark-700">
               {(['charts', 'forecast'] as const).map((tab) => (
@@ -301,9 +301,9 @@ export default function StationDetail() {
           {activeTab === 'charts' && (
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {[
-                { label: 'Temperature', value: `${weather.data.temperature}°C` },
-                { label: 'Humidity', value: `${weather.data.humidity}%` },
-                { label: 'Wind', value: `${weather.data.wind_speed} km/h` },
+                { label: t('temperatureLabel'), value: `${weather.data.temperature}°C` },
+                { label: t('humidityLabel'), value: `${weather.data.humidity}%` },
+                { label: t('wind'), value: `${weather.data.wind_speed} km/h` },
                 { label: t('forecast24h'), value: `${weather.data.forecast_rainfall_24h} mm` },
                 { label: t('forecast48h'), value: `${weather.data.forecast_rainfall_48h} mm` },
               ].map((item, i) => (
@@ -317,12 +317,12 @@ export default function StationDetail() {
 
           {activeTab === 'forecast' && forecast.length > 0 && (
             <div className="space-y-4">
-              <h4 className="text-xs text-dark-400 font-medium">48-Hour Forecast</h4>
+              <h4 className="text-xs text-dark-400 font-medium">{t('forecast48Hour')}</h4>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-dark-400 border-b border-dark-700">
-                      <th className="text-left py-2 px-3 font-medium">Time</th>
+                      <th className="text-left py-2 px-3 font-medium">{t('hours')}</th>
                       <th className="text-left py-2 px-3 font-medium">
                         <Thermometer className="w-4 h-4 inline" /> Temp (°C)
                       </th>
