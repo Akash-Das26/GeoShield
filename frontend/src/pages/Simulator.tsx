@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { simulateLandslide, SimulationResult, getStations, Station } from '../services/api';
+import { simulateLandslide, simulateBatch, resetSimulation, SimulationResult, getStations, Station } from '../services/api';
 import { t } from '../i18n/translations';
 import { useEffect } from 'react';
 import {
   Zap, AlertTriangle, Radio, Mountain, Droplets, Activity,
   ChevronRight, Shield, Play, RotateCcw, TrendingUp,
-  Users, Clock, MapPin,
+  Users, Clock, MapPin, RefreshCw, XCircle,
 } from 'lucide-react';
 
 const INTENSITY_CONFIG = {
@@ -20,6 +20,7 @@ export default function Simulator() {
   const [selectedStation, setSelectedStation] = useState('');
   const [intensity, setIntensity] = useState<'low' | 'moderate' | 'high' | 'critical'>('high');
   const [loading, setLoading] = useState(false);
+  const [batchLoading, setBatchLoading] = useState(false);
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [history, setHistory] = useState<SimulationResult[]>([]);
 
@@ -48,6 +49,33 @@ export default function Simulator() {
       console.error('Simulation error:', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBatchSimulate = async () => {
+    setBatchLoading(true);
+    try {
+      const res = await simulateBatch(5);
+      const results = res.data.results;
+      if (results.length > 0) {
+        setResult(results[0]);
+        setHistory(prev => [...results, ...prev].slice(0, 10));
+      }
+    } catch (e) {
+      console.error('Batch simulation error:', e);
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!window.confirm('Clear all simulation alerts and history?')) return;
+    try {
+      await resetSimulation();
+      setHistory([]);
+      setResult(null);
+    } catch (e) {
+      console.error('Reset error:', e);
     }
   };
 
@@ -158,28 +186,52 @@ export default function Simulator() {
             This will create a simulated landslide event with spiked sensor readings,
             AI risk assessment, and generate alerts for the selected station.
           </p>
-          <button
-            onClick={handleSimulate}
-            disabled={loading}
-            className={`w-full py-4 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
-              intensity === 'critical'
-                ? 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-500 hover:to-red-400 animate-pulse'
-                : intensity === 'high'
-                ? 'bg-gradient-to-r from-orange-600 to-red-500 text-white hover:from-orange-500 hover:to-red-400'
-                : intensity === 'moderate'
-                ? 'bg-gradient-to-r from-amber-600 to-orange-500 text-white hover:from-amber-500 hover:to-orange-400'
-                : 'bg-gradient-to-r from-green-600 to-emerald-500 text-white hover:from-green-500 hover:to-emerald-400'
-            }`}
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <Zap className="w-5 h-5" />
-                {intensity === 'critical' ? 'TRIGGER CRITICAL EVENT' : 'Run Simulation'}
-              </>
-            )}
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={handleSimulate}
+              disabled={loading || batchLoading}
+              className={`w-full py-4 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
+                intensity === 'critical'
+                  ? 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-500 hover:to-red-400 animate-pulse'
+                  : intensity === 'high'
+                  ? 'bg-gradient-to-r from-orange-600 to-red-500 text-white hover:from-orange-500 hover:to-red-400'
+                  : intensity === 'moderate'
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-500 text-white hover:from-amber-500 hover:to-orange-400'
+                  : 'bg-gradient-to-r from-green-600 to-emerald-500 text-white hover:from-green-500 hover:to-emerald-400'
+              }`}
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Zap className="w-5 h-5" />
+                  {intensity === 'critical' ? 'TRIGGER CRITICAL EVENT' : 'Run Simulation'}
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleBatchSimulate}
+              disabled={loading || batchLoading}
+              className="w-full py-3 rounded-xl font-medium text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-500 text-white hover:from-purple-500 hover:to-blue-400"
+            >
+              {batchLoading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  Run Batch (5 stations)
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleReset}
+              disabled={loading || batchLoading}
+              className="w-full py-2 rounded-xl font-medium text-xs transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-dark-800 border border-dark-700 text-dark-400 hover:text-white hover:border-red-600/30"
+            >
+              <XCircle className="w-4 h-4" />
+              Reset All Simulations
+            </button>
+          </div>
           <div className="mt-4 space-y-1.5">
             <p className="text-[10px] text-dark-500 font-medium">What happens:</p>
             {['Spike in sensor readings', 'AI risk assessment runs', 'Alert generated if risk >= moderate', 'Dashboard updates in real-time'].map((item, i) => (
