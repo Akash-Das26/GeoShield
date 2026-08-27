@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, Polyline } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import {
   getStations, getRiskHeatmap, getRoads, getVillages,
@@ -31,11 +31,6 @@ const VILLAGE_COLORS: Record<string, string> = {
 
 // Center of NER region
 const NER_CENTER: [number, number] = [25.5, 92.5];
-
-function MapLegend() {
-  const map = useMap();
-  return null;
-}
 
 export default function RiskMap() {
   const navigate = useNavigate();
