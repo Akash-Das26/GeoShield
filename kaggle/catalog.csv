@@ -1,0 +1,11 @@
+event_id,event_date,event_time,event_title,event_description,event_type,event_source,event_source_link,country_name,country_code,location_description,location_accuracy,latitude,longitude,landslide_size,landslide_trigger,landslide_setting,fatality_count,injury_count
+NER001,2024-06-15,14:30,Gangtok Hill Slope Failure,Heavy rainfall triggered slope failure near Tadong village,landslide,news,,India,IN,"Tadong, Gangtok, Sikkim",accurate,27.3389,88.6065,medium,rain,hill_slope,0,2
+NER002,2024-07-22,09:15,Mawlynnong Village Landslide,Monsoon rains caused landslide in tourist village,landslide,news,,India,IN,"Mawlynnong, East Khasi Hills, Meghalaya",accurate,25.2592,91.7276,small,rain,hill_slope,0,0
+NER003,2024-08-05,16:45,NH-10 Blockage Near Rangpo,Landslide blocked national highway near Rangpo,landslide,news,,India,IN,"Rangpo, East Sikkim",accurate,27.2833,88.5333,medium,rain,road_cut,0,3
+NER004,2024-08-12,11:20,Dima Hasao Hill Collapse,Multiple landslides in Dima Hasao district,landslide,news,,India,IN,"Haflong, Dima Hasao, Assam",accurate,25.45,93.18,large,rain,hill_slope,1,5
+NER005,2024-09-01,07:30,Tawang Road Slide,Landslide damaged road connecting Tawang,landslide,news,,India,IN,"Tawang, Arunachal Pradesh",accurate,27.586,91.88,medium,rain,road_cut,0,1
+NER006,2025-06-18,13:00,Cherrapunji Slope Failure,Extreme rainfall triggered multiple slope failures,landslide,news,,India,IN,"Cherrapunji, Meghalaya",accurate,25.2838,91.7344,large,rain,hill_slope,2,8
+NER007,2025-07-05,15:30,Aizawl Hill Collapse,Urban landslide in Aizawl city,landslide,news,,India,IN,"Aizawl, Mizoram",accurate,23.7271,92.7176,medium,rain,urban,0,4
+NER008,2025-08-10,08:45,Kohima Ridge Landslide,Nighttime landslide in Kohima,landslide,news,,India,IN,"Kohima, Nagaland",accurate,25.6586,94.1086,small,rain,hill_slope,0,1
+NER009,2025-09-15,12:15,Lunglei Road Blockage,Major road blocked by landslide debris,landslide,news,,India,IN,"Lunglei, Mizoram",accurate,22.9,92.75,medium,rain,road_cut,0,2
+NER010,2026-06-20,14:00,Ziro Valley Slope Movement,Slow-moving landslide detected in Ziro Valley,landslide,news,,India,IN,"Ziro, Arunachal Pradesh",accurate,27.5887,93.8492,small,rain,agriculture,0,0
