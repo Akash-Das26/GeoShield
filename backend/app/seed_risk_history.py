@@ -1,4 +1,5 @@
 """Generate historical risk assessments to populate trend charts."""
+import json
 import random
 import math
 from datetime import datetime, timedelta
@@ -59,7 +60,7 @@ def seed_risk_history():
                     risk_level=level,
                     risk_score=round(risk_score, 1),
                     landslide_probability=round(prob, 3),
-                    contributing_factors=str(factors),
+                    contributing_factors=json.dumps(factors),
                     predicted_time_window=max(1, int((100 - risk_score) / 4)),
                     recommendation=recs.get(level, "Continue monitoring."),
                     model_version="v1.0",

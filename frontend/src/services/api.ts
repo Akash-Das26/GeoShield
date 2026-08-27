@@ -7,6 +7,45 @@ const api = axios.create({
   timeout: 15000,
 });
 
+// --- JWT token management ---
+const TOKEN_KEY = 'geoshield_token';
+
+export function getStoredToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setStoredToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearStoredToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+// Attach JWT token to every request automatically
+api.interceptors.request.use((config) => {
+  const token = getStoredToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// On 401, clear token so user is logged out
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      clearStoredToken();
+      // Only redirect if not already on login (avoid redirect loops)
+      if (!window.location.pathname.includes('/login')) {
+        window.location.reload();
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export interface Station {
   id: number;
   station_id: string;
@@ -135,6 +174,18 @@ export interface WeatherData {
   timestamp: string;
 }
 
+// Auth
+export const loginAPI = (email: string, password: string) => {
+  const formData = new FormData();
+  formData.append('email', email);
+  formData.append('password', password);
+  return api.post<{ token: string; user: { email: string; name: string; role: string } }>(
+    '/auth/login',
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+};
+
 // Dashboard
 export const getDashboardStats = () => api.get<DashboardStats>('/dashboard/stats');
 export const getRiskHeatmap = () => api.get<HeatmapPoint[]>('/dashboard/risk-heatmap');
@@ -151,6 +202,7 @@ export const getStationHistory = (id: string, hours = 24) => api.get(`/sensors/s
 export const getAlerts = (params?: { status?: string; risk_level?: string }) =>
   api.get<Alert[]>('/alerts', { params });
 export const getActiveAlerts = () => api.get<Alert[]>('/alerts/active');
+export const getAlertStats = () => api.get<{ total: number; active: number; acknowledged: number; resolved: number; critical_active: number; high_active: number }>('/alerts/stats');
 export const acknowledgeAlert = (id: number) => api.put(`/alerts/${id}/acknowledge`);
 export const resolveAlert = (id: number) => api.put(`/alerts/${id}/resolve`);
 
