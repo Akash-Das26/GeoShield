@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react';
 import {
   getDashboardStats, getRainfallTrend, getRiskTrend, getStateSummary,
-  getRiskHeatmap, getStations,
-  DashboardStats, HeatmapPoint, Station,
+  getStations, getActiveAlerts,
+  DashboardStats, Station, Alert,
 } from '../services/api';
 import { t } from '../i18n/translations';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar, RadarChart, Radar,
+  PieChart, Pie, Cell, AreaChart, Area, RadarChart, Radar,
   PolarGrid, PolarAngleAxis, PolarRadiusAxis,
 } from 'recharts';
 import {
   Activity, AlertTriangle, Users, FileText, TrendingUp,
-  Radio, Droplets, Mountain, MapPin, Clock, Shield, Zap,
-  ChevronRight, Building2, Car, Eye, Cloud, Sun, Wind,
-  Thermometer, BarChart3, Layers, Target, Bell, Map,
-  Navigation, AlertCircle, CheckCircle, XCircle, Info,
+  Radio, Droplets, Mountain, MapPin, Shield, Zap,
+  ChevronRight, Building2, Car, Target, Bell, Map,
+  Navigation,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const RISK_COLORS: Record<string, string> = {
   low: '#22c55e',
@@ -26,35 +26,33 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [rainfall, setRainfall] = useState<{ timestamp: string; avg_rainfall: number }[]>([]);
   const [riskTrend, setRiskTrend] = useState<{ timestamp: string; avg_risk: number }[]>([]);
   const [stateData, setStateData] = useState<{ state: string; stations: number; avg_risk_score: number; critical_count: number }[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [activeTab, setActiveTab] = useState<'overview' | 'stations' | 'alerts'>('overview');
-
-  useEffect(() => {
-    const clock = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(clock);
-  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsRes, rainRes, riskRes, stateRes, stationsRes] = await Promise.all([
+        const [statsRes, rainRes, riskRes, stateRes, stationsRes, alertsRes] = await Promise.all([
           getDashboardStats(),
           getRainfallTrend(),
           getRiskTrend(),
           getStateSummary(),
           getStations(),
+          getActiveAlerts(),
         ]);
         setStats(statsRes.data);
         setRainfall(rainRes.data);
         setRiskTrend(riskRes.data);
         setStateData(stateRes.data);
         setStations(stationsRes.data);
+        setAlerts(alertsRes.data);
       } catch (e) {
         console.error('Dashboard fetch error:', e);
       } finally {
@@ -74,12 +72,10 @@ export default function Dashboard() {
           <div className="space-y-2">
             <p className="text-white font-semibold text-lg">Initializing GeoShield</p>
             <p className="text-dark-400 text-sm">Connecting to sensor network...</p>
-            <div className="flex items-center justify-center gap-2 mt-4">
-              <div className="flex gap-1">
-                {[0, 1, 2].map(i => (
-                  <div key={i} className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
-                ))}
-              </div>
+            <div className="flex items-center justify-center gap-1 mt-4">
+              {[0, 1, 2].map(i => (
+                <div key={i} className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+              ))}
             </div>
           </div>
         </div>
@@ -117,8 +113,7 @@ export default function Dashboard() {
 
   const formatTime = (ts: string) => {
     try {
-      const d = new Date(ts);
-      return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      return new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     } catch { return ts; }
   };
 
@@ -152,7 +147,6 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {/* Tab Switcher */}
           <div className="flex bg-dark-800 rounded-xl p-1 border border-dark-700">
             {(['overview', 'stations', 'alerts'] as const).map((tab) => (
               <button
@@ -362,7 +356,7 @@ export default function Dashboard() {
               </div>
               <div className="space-y-2">
                 {stateData.map((state, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-dark-800/50 hover:bg-dark-800 transition-all cursor-default group">
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-dark-800/50 hover:bg-dark-800 transition-all cursor-default">
                     <div className="flex items-center gap-2">
                       <div className={`w-1.5 h-6 rounded-full ${
                         state.avg_risk_score >= 50 ? 'bg-red-500' :
@@ -392,8 +386,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* State Risk Radar Chart */}
+          {/* Bottom Row: Radar + Top Risk */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* State Risk Radar */}
             <div className="glass rounded-xl p-5">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-purple-600/20 flex items-center justify-center">
@@ -418,7 +413,7 @@ export default function Dashboard() {
             <div className="glass rounded-xl p-5">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-red-600/20 flex items-center justify-center">
-                  <AlertCircle className="w-4 h-4 text-red-400" />
+                  <AlertTriangle className="w-4 h-4 text-red-400" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">Top Risk Stations</h3>
@@ -427,12 +422,12 @@ export default function Dashboard() {
               </div>
               <div className="space-y-3">
                 {topStations.map((station, i) => {
-                  const risk = station.risk;
-                  const riskLevel = risk?.level || 'low';
-                  const riskScore = risk?.score || 0;
+                  const riskLevel = station.risk?.level || 'low';
+                  const riskScore = station.risk?.score || 0;
                   return (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-dark-800/50 hover:bg-dark-800 transition-all cursor-pointer group"
-                      onClick={() => window.location.href = `/station/${station.station_id}`}
+                    <div key={i}
+                      className="flex items-center justify-between p-3 rounded-xl bg-dark-800/50 hover:bg-dark-800 transition-all cursor-pointer group"
+                      onClick={() => navigate(`/station/${station.station_id}`)}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
@@ -445,7 +440,7 @@ export default function Dashboard() {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white group-hover:text-green-400 transition-colors">{station.name}</p>
-                          <p className="text-[10px] text-dark-500">{station.state} • {station.district}</p>
+                          <p className="text-[10px] text-dark-500">{station.state} - {station.district}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -471,17 +466,17 @@ export default function Dashboard() {
       {activeTab === 'stations' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {stations.map((station) => {
-            const risk = station.risk;
-            const riskLevel = risk?.level || 'low';
-            const riskScore = risk?.score || 0;
+            const riskLevel = station.risk?.level || 'low';
+            const riskScore = station.risk?.score || 0;
             return (
-              <div key={station.station_id} className="glass rounded-xl p-4 hover:border-dark-600 transition-all cursor-pointer group"
-                onClick={() => window.location.href = `/station/${station.station_id}`}
+              <div key={station.station_id}
+                className="glass rounded-xl p-4 hover:border-dark-600 transition-all cursor-pointer group"
+                onClick={() => navigate(`/station/${station.station_id}`)}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h4 className="text-sm font-semibold text-white group-hover:text-green-400 transition-colors">{station.name}</h4>
-                    <p className="text-[10px] text-dark-500">{station.state} • {station.district}</p>
+                    <p className="text-[10px] text-dark-500">{station.state} - {station.district}</p>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     riskLevel === 'critical' ? 'bg-red-600/20 text-red-400 border border-red-600/30' :
@@ -505,11 +500,10 @@ export default function Dashboard() {
                   </div>
                   <div className="text-center p-1.5 rounded-lg bg-dark-800/50">
                     <TrendingUp className="w-3 h-3 text-orange-400 mx-auto mb-0.5" />
-                    <p className="text-xs font-bold text-white">{station.slope_angle}°</p>
+                    <p className="text-xs font-bold text-white">{station.slope_angle}&deg;</p>
                     <p className="text-[9px] text-dark-500">slope</p>
                   </div>
                 </div>
-                {/* Risk bar */}
                 <div className="h-1.5 bg-dark-800 rounded-full overflow-hidden">
                   <div className={`h-full rounded-full transition-all duration-1000 ${
                     riskLevel === 'critical' ? 'bg-red-500' :
@@ -528,49 +522,45 @@ export default function Dashboard() {
       )}
 
       {activeTab === 'alerts' && (
-        <div className="glass rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Bell className="w-5 h-5 text-red-400" />
-            <h3 className="text-lg font-semibold text-white">Active Alerts & Warnings</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { title: 'Heavy Rainfall Alert - Cherrapunji', level: 'critical', station: 'NER-011', pop: 12000, time: '2h ago' },
-              { title: 'Slope Instability Warning - Tawang', level: 'high', station: 'NER-019', pop: 8500, time: '4h ago' },
-              { title: 'Road Blockage - Imphal-Jiribam Highway', level: 'high', station: 'NER-006', pop: 15000, time: '6h ago' },
-              { title: 'Soil Saturation Alert - Ziro Valley', level: 'moderate', station: 'NER-017', pop: 5500, time: '8h ago' },
-              { title: 'Ground Displacement Detected - Pasighat', level: 'moderate', station: 'NER-018', pop: 9000, time: '12h ago' },
-            ].map((alert, i) => (
-              <div key={i} className={`p-4 rounded-xl border transition-all hover:scale-[1.01] ${
-                alert.level === 'critical' ? 'bg-red-600/10 border-red-600/30' :
-                alert.level === 'high' ? 'bg-orange-600/10 border-orange-600/30' :
-                'bg-amber-600/10 border-amber-600/30'
-              }`}>
+        <div className="space-y-4">
+          {alerts.length === 0 ? (
+            <div className="glass rounded-xl p-12 text-center">
+              <Shield className="w-12 h-12 text-green-500 mx-auto mb-3" />
+              <p className="text-white font-semibold">No Active Alerts</p>
+              <p className="text-dark-400 text-sm mt-1">All stations are within safe parameters</p>
+            </div>
+          ) : (
+            alerts.map((alert, i) => (
+              <div key={i}
+                className={`glass rounded-xl p-5 border transition-all hover:scale-[1.01] ${
+                  alert.risk_level === 'critical' ? 'bg-red-600/10 border-red-600/30' :
+                  alert.risk_level === 'high' ? 'bg-orange-600/10 border-orange-600/30' :
+                  'bg-amber-600/10 border-amber-600/30'
+                }`}
+              >
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-semibold text-white">{alert.title}</p>
-                    <p className="text-xs text-dark-400 mt-1">Station: {alert.station} • {alert.time}</p>
-                    <p className="text-xs text-dark-400 mt-0.5">👥 {alert.pop.toLocaleString()} people affected</p>
+                    <p className="text-xs text-dark-400 mt-1">{alert.message}</p>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-dark-400">
+                      <span>Station: {alert.station_id}</span>
+                      <span>{new Date(alert.created_at).toLocaleString()}</span>
+                      {alert.affected_population > 0 && (
+                        <span>{alert.affected_population.toLocaleString()} people affected</span>
+                      )}
+                    </div>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    alert.level === 'critical' ? 'bg-red-600/20 text-red-400' :
-                    alert.level === 'high' ? 'bg-orange-600/20 text-orange-400' :
+                    alert.risk_level === 'critical' ? 'bg-red-600/20 text-red-400' :
+                    alert.risk_level === 'high' ? 'bg-orange-600/20 text-orange-400' :
                     'bg-amber-600/20 text-amber-400'
                   }`}>
-                    {alert.level.toUpperCase()}
+                    {alert.risk_level.toUpperCase()}
                   </span>
                 </div>
-                <div className="flex gap-2 mt-3">
-                  <button className="px-3 py-1 rounded-lg bg-amber-600/20 text-amber-400 border border-amber-600/30 text-xs font-medium hover:bg-amber-600/30 transition-all">
-                    Acknowledge
-                  </button>
-                  <button className="px-3 py-1 rounded-lg bg-green-600/20 text-green-400 border border-green-600/30 text-xs font-medium hover:bg-green-600/30 transition-all">
-                    Resolve
-                  </button>
-                </div>
               </div>
-            ))}
-          </div>
+            ))
+          )}
         </div>
       )}
 
@@ -591,7 +581,6 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <Clock className="w-3 h-3 text-dark-500" />
           <span className="text-[10px] text-dark-500">Last update: {new Date(stats.last_updated).toLocaleTimeString()}</span>
         </div>
       </div>

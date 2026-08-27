@@ -167,4 +167,31 @@ export const getVillages = (riskZone?: string) => api.get<Village[]>('/villages'
 // Weather
 export const getWeather = (stationId: string) => api.get<{ data: WeatherData }>(`/weather/${stationId}`);
 
+// Simulator
+export interface SimulationResult {
+  status: string;
+  simulation: {
+    station: { id: string; name: string; state: string; district: string };
+    intensity: string;
+    sensor_reading: { rainfall_mm: number; soil_moisture: number; ground_displacement: number; pore_pressure: number };
+  };
+  risk_assessment: {
+    risk_score: number;
+    risk_level: string;
+    landslide_probability: number;
+    contributing_factors: string[];
+    time_window_hours: number;
+    recommendation: string;
+  };
+  alert: {
+    id: number;
+    title: string;
+    affected_population: number;
+  } | null;
+}
+export const simulateLandslide = (data: { station_id?: string; intensity?: string }) =>
+  api.post<SimulationResult>('/simulate/landslide', data);
+export const simulateBatch = (count: number = 5) =>
+  api.post(`/simulate/batch?count=${count}`);
+
 export default api;
