@@ -15,6 +15,7 @@ from app.models import (
     SensorStation, SensorReading, RiskAssessment, Alert, WeatherData
 )
 from app.ai_engine.risk_predictor import get_predictor
+from app.auth import require_role
 
 router = APIRouter(prefix="/api/simulate", tags=["simulate"])
 
@@ -27,7 +28,7 @@ class LandslideRequest(BaseModel):
 
 
 @router.post("/landslide")
-def simulate_landslide(request: LandslideRequest, db: Session = Depends(get_db)):
+def simulate_landslide(request: LandslideRequest, db: Session = Depends(get_db), user: dict = Depends(require_role("admin", "field_officer", "district_admin"))):
     """
     Simulate a landslide event at a station.
     Creates spike in sensor readings, generates risk assessment, creates alert.
@@ -182,7 +183,7 @@ def simulate_landslide(request: LandslideRequest, db: Session = Depends(get_db))
 
 
 @router.post("/batch")
-def simulate_batch(count: int = 5, db: Session = Depends(get_db)):
+def simulate_batch(count: int = 5, db: Session = Depends(get_db), user: dict = Depends(require_role("admin", "field_officer", "district_admin"))):
     """Simulate multiple landslide events across different stations."""
     results = []
     stations = db.query(SensorStation).filter(SensorStation.slope_angle > 30).all()
@@ -206,14 +207,11 @@ def simulate_batch(count: int = 5, db: Session = Depends(get_db)):
 
 
 @router.post("/reset")
-def reset_simulations(db: Session = Depends(get_db)):
-    """Reset all simulation data - clear alerts and recent readings."""
-    # Delete simulation alerts
-    db.query(Alert).filter(Alert.model_version == "v1.0-sim" if hasattr(Alert, 'model_version') else True).delete(synchronize_session=False)
-
-    # Actually just delete all alerts and recreate from seed
+def reset_simulations(db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
+    """Reset all simulation data - clear alerts and recent readings. Admin only."""
+    # Delete all alerts (simulation and real)
     from app.models import Alert as AlertModel
     db.query(AlertModel).delete(synchronize_session=False)
     db.commit()
 
-    return {"status": "success", "message": "Simulation data reset. Restart server to re-seed."}
+    return {"status": "success", "message": "All alerts cleared. Restart server to re-seed."}

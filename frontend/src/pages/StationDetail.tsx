@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getStation, getStationHistory, getWeather } from '../services/api';
+import { getStation, getStationHistory, getWeather, getWeatherForecast } from '../services/api';
 import { t } from '../i18n/translations';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area,
+  BarChart, Bar,
 } from 'recharts';
 import {
   ArrowLeft, Radio, Mountain, Droplets, Thermometer,
   Activity, AlertTriangle, TrendingUp, ChevronRight,
+  CloudRain, Wind,
 } from 'lucide-react';
 
 const RISK_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -24,21 +26,25 @@ export default function StationDetail() {
   const [station, setStation] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [weather, setWeather] = useState<any>(null);
+  const [forecast, setForecast] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState(24);
+  const [activeTab, setActiveTab] = useState<'charts' | 'forecast'>('charts');
 
   useEffect(() => {
     if (!stationId) return;
     const fetchData = async () => {
       try {
-        const [stationRes, historyRes, weatherRes] = await Promise.all([
+        const [stationRes, historyRes, weatherRes, forecastRes] = await Promise.all([
           getStation(stationId),
           getStationHistory(stationId, timeRange),
           getWeather(stationId),
+          getWeatherForecast(stationId, 48),
         ]);
         setStation(stationRes.data);
         setHistory(historyRes.data);
         setWeather(weatherRes.data);
+        setForecast(forecastRes.data);
       } catch (e) {
         console.error('Station fetch error:', e);
       } finally {
@@ -271,23 +277,79 @@ export default function StationDetail() {
       {/* Weather Card */}
       {weather?.data && (
         <div className="glass rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
-            ☁️ Weather Conditions
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {[
-              { label: 'Temperature', value: `${weather.data.temperature}°C` },
-              { label: 'Humidity', value: `${weather.data.humidity}%` },
-              { label: 'Wind', value: `${weather.data.wind_speed} km/h` },
-              { label: t('forecast24h'), value: `${weather.data.forecast_rainfall_24h} mm` },
-              { label: t('forecast48h'), value: `${weather.data.forecast_rainfall_48h} mm` },
-            ].map((item, i) => (
-              <div key={i} className="p-3 rounded-lg bg-dark-800/50">
-                <p className="text-xs text-dark-400">{item.label}</p>
-                <p className="text-lg font-bold text-white">{item.value}</p>
-              </div>
-            ))}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              ☁️ Weather
+            </h3>
+            <div className="flex bg-dark-800 rounded-lg p-1 border border-dark-700">
+              {(['charts', 'forecast'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    activeTab === tab
+                      ? 'bg-green-600/20 text-green-400 border border-green-600/30'
+                      : 'text-dark-400 hover:text-white border border-transparent'
+                  }`}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {activeTab === 'charts' && (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {[
+                { label: 'Temperature', value: `${weather.data.temperature}°C` },
+                { label: 'Humidity', value: `${weather.data.humidity}%` },
+                { label: 'Wind', value: `${weather.data.wind_speed} km/h` },
+                { label: t('forecast24h'), value: `${weather.data.forecast_rainfall_24h} mm` },
+                { label: t('forecast48h'), value: `${weather.data.forecast_rainfall_48h} mm` },
+              ].map((item, i) => (
+                <div key={i} className="p-3 rounded-lg bg-dark-800/50">
+                  <p className="text-xs text-dark-400">{item.label}</p>
+                  <p className="text-lg font-bold text-white">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === 'forecast' && forecast.length > 0 && (
+            <div className="space-y-4">
+              <h4 className="text-xs text-dark-400 font-medium">48-Hour Forecast</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-dark-400 border-b border-dark-700">
+                      <th className="text-left py-2 px-3 font-medium">Time</th>
+                      <th className="text-left py-2 px-3 font-medium">
+                        <Thermometer className="w-4 h-4 inline" /> Temp (°C)
+                      </th>
+                      <th className="text-left py-2 px-3 font-medium">
+                        <Droplets className="w-4 h-4 inline" /> Rain (mm)
+                      </th>
+                      <th className="text-left py-2 px-3 font-medium">
+                        <Wind className="w-4 h-4 inline" /> Humidity (%)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {forecast.map((f, i) => (
+                      <tr key={i} className="border-b border-dark-800">
+                        <td className="py-2 px-3 text-dark-300">
+                          {new Date(f.timestamp).toLocaleString()}
+                        </td>
+                        <td className="py-2 px-3 text-white">{f.temperature}</td>
+                        <td className="py-2 px-3 text-cyan-400">{f.rainfall_1h || 0}</td>
+                        <td className="py-2 px-3 text-emerald-400">{f.humidity}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

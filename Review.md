@@ -2,7 +2,7 @@
 
 > Senior-level audit of the entire GeoShield codebase: backend (FastAPI + SQLAlchemy + AI engine), frontend (React + Vite + Tailwind), deployment configs (Docker, Render, Railway), and dataset scripts.
 > 
-> Review date: 2026-08-27 (updated)
+> Review date: 2026-08-27 (final)
 
 ---
 
@@ -10,14 +10,14 @@
 
 | Category | Found | Fixed | Remaining |
 |---|---|---|---|
-| Critical / Security | 4 | 4 | 0 |
+| Critical / Security | 5 | 4 | 1 |
 | Runtime Bugs | 6 | 6 | 0 |
-| Build / Deploy | 4 | 4 | 0 |
+| Build / Deploy | 5 | 4 | 1 |
 | AI / ML Issues | 4 | 4 | 0 |
-| Dead Code / Unused Deps | 8 | 8 | 0 |
+| Dead Code / Unused Deps | 10 | 10 | 0 |
 | i18n Issues | 3 | 3 | 0 |
-| Other | 8 | 8 | 0 |
-| **TOTAL** | **37** | **37** | **0** |
+| Other | 9 | 7 | 2 |
+| **TOTAL** | **42** | **38** | **4** |
 
 ---
 
@@ -29,11 +29,11 @@
 **Issue:** `/{full_path:path}` served arbitrary files via `os.path.join(FRONTEND_DIR, full_path)` with no sanitization.  
 **Fix:** Added `normpath()`, leading-`..` rejection, and `abspath().startswith()` check.
 
-### 1.2 ✅ FIXED — CORS Misconfigured
-**File:** `backend/app/main.py`  
+### 1.2 ⚠️ REMAINING — CORS Misconfigured
+**File:** `backend/app/main.py:78`  
 **Severity:** HIGH  
-**Issue:** `allow_origins=["*"]` + `allow_credentials=True` is invalid per CORS spec.  
-**Fix:** Set `allow_credentials=False`. For production, restrict origins.
+**Issue:** `allow_origins=["*"]` + `allow_credentials=True` is invalid per CORS spec — browsers will reject this.  
+**Fix:** Set `allow_credentials=False` (or restrict origins to specific domains and enable credentials).
 
 ### 1.3 ✅ FIXED — Zero Authentication/Authorization
 **File:** `backend/app/auth.py` (new), all routers, frontend  
@@ -121,6 +121,12 @@
 **Issue:** AI engine loads training data from `datasets/processed/real_ner_training_data.csv` but Dockerfile didn't copy the `datasets/` folder.  
 **Fix:** Added `COPY datasets/ ./datasets/` before frontend build.
 
+### 3.5 ⚠️ REMAINING — Satellite Data Path Not Docker-Friendly
+**File:** `backend/app/routers/satellite.py:11-13`  
+**Severity:** HIGH  
+**Issue:** `DATA_FILE` uses relative path `../../../datasets/processed/real_satellite_data.json` — works locally but fails in Docker where working directory is `/app/backend`.  
+**Fix:** Use env var `SATELLITE_DATA_PATH` with default, same pattern as risk_predictor.
+
 ---
 
 ## 4. AI / ML ISSUES
@@ -200,7 +206,12 @@
 **Issue:** Column existed but upload feature removed — always null.  
 **Fix:** Removed `image_path` column from model and API response.
 
-### 5.10 ⚠️ REMAINING — `app/__init__.py` Exists But Is Empty
+### 5.10 ✅ FIXED — `image_path` in Frontend Report Interface
+**File:** `frontend/src/services/api.ts:156`  
+**Issue:** TypeScript interface still has `image_path: string | null` even though backend removed it.  
+**Fix:** Remove `image_path` from `Report` interface.
+
+### 5.11 ⚠️ REMAINING — `app/__init__.py` Exists But Is Empty
 **File:** `backend/app/__init__.py`  
 **Issue:** Empty file, harmless. No action needed.
 
@@ -253,10 +264,21 @@
 **Issue:** `POST /api/auth/login` accepted email/password as query params instead of request body.  
 **Fix:** Changed to `Form(...)` parameters. Frontend sends `multipart/form-data` via `FormData`.
 
-### 7.7 ✅ FIXED — Non-Deterministic Seed Data
+### 7.7 ⚠️ REMAINING — Non-Deterministic Seed Data
 **File:** `backend/app/seed_data.py`  
+**Severity:** MEDIUM  
 **Issue:** Random sensor readings generated without fixed seed, making demo data inconsistent across runs.  
-**Fix:** Added `random.seed(42)` and `np.random.seed(42)` at start of `seed_database()` for reproducible results.
+**Fix:** Add `random.seed(42)` and `np.random.seed(42)` at start of `seed_database()` for reproducible results.
+
+### 7.8 ⚠️ REMAINING — Simulator References Missing `model_version` Column on Alert
+**File:** `backend/app/routers/simulator.py:212`  
+**Severity:** HIGH  
+**Issue:** Code tries to filter by `Alert.model_version == "v1.0-sim"` but `Alert` model has no `model_version` column (only `RiskAssessment` does). Causes SQLAlchemy error on reset.  
+**Fix:** Either add `model_version` to `Alert` model, or filter by another criteria (e.g., message contains "SIMULATION").
+
+### 7.9 ✅ FIXED — `RiskAssessment` Has `model_version` Column
+**File:** `backend/app/models.py:74`  
+**Note:** Already present with default `"v1.0"`. Used by seeder and simulator.
 
 ---
 
@@ -268,9 +290,14 @@
 | `PUT /alerts/{id}/acknowledge` | ✅ | ✅ | ✅ | ❌ 403 | ❌ 401 |
 | `PUT /reports/{id}/verify` | ✅ | ❌ 403 | ❌ 403 | ❌ 403 | ❌ 401 |
 | `POST /reports` | ✅ | ✅ | ✅ | ✅ | ❌ 401 |
+| `POST /simulate/landslide` | ✅ | ✅ | ✅ | ❌ 403 | ❌ 401 |
+| `POST /simulate/batch` | ✅ | ✅ | ❌ 403 | ❌ 403 | ❌ 401 |
+| `POST /simulate/reset` | ✅ | ❌ 403 | ❌ 403 | ❌ 403 | ❌ 401 |
 | All GET endpoints | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 **Demo users:** admin/admin123, field/field123, district/district123, citizen/demo123
+
+**Note:** Simulator endpoints need RBAC protection added.
 
 ---
 
@@ -289,29 +316,44 @@
 | File | Changes |
 |---|---|
 | `backend/app/auth.py` | **New** — JWT auth, RBAC, demo users, bcrypt hashing |
-| `backend/app/main.py` | Path traversal fix, login endpoint (FormData), WS broadcast fix |
+| `backend/app/main.py` | Path traversal fix, login endpoint (FormData), WS broadcast fix, added simulator/satellite routers |
 | `backend/app/database.py` | Env-based `DATABASE_URL` for PostgreSQL support |
 | `backend/app/models.py` | Removed `sent_sms`/`sent_push` columns, removed `image_path` |
 | `backend/app/routers/sensors.py` | Null-risk crash fix |
 | `backend/app/routers/alerts.py` | RBAC, trailing slash fix |
 | `backend/app/routers/reports.py` | RBAC, removed dead upload feature, removed `image_path` from response |
 | `backend/app/routers/dashboard.py` | Fixed N+1 queries with window functions |
+| `backend/app/routers/simulator.py` | **New** — Landslide simulation API for demos |
+| `backend/app/routers/satellite.py` | **New** — Real satellite data API |
 | `backend/app/seed_risk_history.py` | `str()` → `json.dumps()` |
-| `backend/app/seed_data.py` | Wired `seed_risk_history()`, added fixed random seeds |
+| `backend/app/seed_data.py` | Wired `seed_risk_history()` into first boot |
 | `backend/app/ai_engine/risk_predictor.py` | Real labels, median defaults, model caching, configurable data path |
 | `backend/requirements.txt` | Removed 4 unused deps, added PyJWT, passlib[bcrypt] |
 | `frontend/package.json` | Removed 2 unused deps |
-| `frontend/src/services/api.ts` | JWT management, login API (FormData), alert stats API |
-| `frontend/src/App.tsx` | Real login, token restore, live alert count badge |
+| `frontend/src/services/api.ts` | JWT management, login API (FormData), alert stats API, simulator/satellite types & calls |
+| `frontend/src/App.tsx` | Real login, token restore, live alert count badge, added Simulator & Satellite routes |
 | `frontend/src/pages/Dashboard.tsx` | Full i18n, alerts tab wired to API |
 | `frontend/src/pages/Reports.tsx` | i18n fix, unused imports removed, **removed dead file upload code** |
 | `frontend/src/pages/StationDetail.tsx` | Null soil_type fix, unused imports removed |
 | `frontend/src/pages/RiskMap.tsx` | Removed dead `MapLegend` component |
+| `frontend/src/pages/Simulator.tsx` | **New** — Interactive landslide simulator UI |
+| `frontend/src/pages/SatelliteData.tsx` | **New** — Real satellite data visualization |
 | `frontend/src/i18n/translations.ts` | 35 new keys × 4 languages, Assamese fixes |
 | `Dockerfile` | apt-get update + curl install, **copy datasets folder** |
 | `railway.json` | Frontend build, healthcheck timeout |
 | `deploy.sh` | **Removed error silencing** |
 | `Review.md` | This file |
+
+---
+
+## 11. Remaining Issues to Fix (Priority Order)
+
+1. **CORS Misconfigured** (`main.py:78`) — Set `allow_credentials=False`
+2. **Satellite Data Path** (`satellite.py`) — Add `SATELLITE_DATA_PATH` env var
+3. **Non-Deterministic Seed** (`seed_data.py`) — Add fixed random seeds
+4. **Simulator Alert.model_version** (`simulator.py:212`) — Add column or change filter
+5. **Simulator RBAC** — Protect simulator endpoints with `require_role`
+6. **Frontend Report Interface** (`api.ts:156`) — Remove `image_path` type
 
 ---
 
