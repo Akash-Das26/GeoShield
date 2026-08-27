@@ -7,10 +7,11 @@ import Alerts from './pages/Alerts';
 import Reports from './pages/Reports';
 import StationDetail from './pages/StationDetail';
 import Simulator from './pages/Simulator';
+import SatelliteData from './pages/SatelliteData';
 import {
   LayoutDashboard, Map, AlertTriangle, FileText, Globe, Shield, Radio,
   ChevronLeft, Clock, LogOut, User, Bell, Search, Activity, Mountain,
-  Droplets, BarChart3, Settings, Home, TrendingUp, Building2, MapPin, Zap,
+  Droplets, BarChart3, Settings, Home, TrendingUp, Building2, MapPin, Zap, Satellite,
 } from 'lucide-react';
 
 interface AuthContextType {
@@ -162,6 +163,7 @@ function MainLayout() {
     { to: '/alerts', icon: AlertTriangle, label: t('alerts'), badge: activeAlerts > 0 ? activeAlerts : null },
     { to: '/reports', icon: FileText, label: t('reports'), badge: null },
     { to: '/simulator', icon: Zap, label: 'Simulator', badge: null },
+    { to: '/satellite', icon: Satellite, label: 'Satellite', badge: null },
   ];
 
   return (
@@ -360,6 +362,7 @@ function MainLayout() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/station/:stationId" element={<StationDetail />} />
             <Route path="/simulator" element={<Simulator />} />
+            <Route path="/satellite" element={<SatelliteData />} />
           </Routes>
         </main>
       </div>
