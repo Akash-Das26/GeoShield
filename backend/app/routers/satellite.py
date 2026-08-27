@@ -8,8 +8,10 @@ from fastapi import APIRouter
 
 router = APIRouter(prefix="/api/satellite", tags=["satellite"])
 
-DATA_FILE = os.path.join(
-    os.path.dirname(__file__), "..", "..", "..", "datasets", "processed", "real_satellite_data.json"
+# Configurable data path for Docker deployments
+SATELLITE_DATA_FILE = os.getenv(
+    "SATELLITE_DATA_PATH",
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "datasets", "processed", "real_satellite_data.json")
 )
 
 _satellite_cache = None
@@ -19,7 +21,7 @@ def _load_satellite_data():
     global _satellite_cache
     if _satellite_cache is None:
         try:
-            with open(DATA_FILE, "r") as f:
+            with open(SATELLITE_DATA_FILE, "r") as f:
                 _satellite_cache = json.load(f)
         except FileNotFoundError:
             _satellite_cache = []
