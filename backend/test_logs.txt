@@ -38,8 +38,8 @@ tests/test_api.py::TestSatellite::test_satellite_summary PASSED          [ 40%]
 tests/test_api.py::TestSatellite::test_satellite_risk_zones PASSED       [ 41%]
 tests/test_api.py::TestInfrastructure::test_roads PASSED                 [ 42%]
 tests/test_api.py::TestInfrastructure::test_villages PASSED              [ 44%]
-tests/test_api.py::TestFrontend::test_serves_index PASSED                [ 45%]
-tests/test_api.py::TestFrontend::test_spa_routes PASSED                  [ 46%]
+tests/test_api.py::TestFrontend::test_serves_index SKIPPED (frontend...) [ 45%]
+tests/test_api.py::TestFrontend::test_spa_routes SKIPPED (frontend/d...) [ 46%]
 tests/test_e2e.py::TestCoreBackend::test_health_returns_200 PASSED       [ 48%]
 tests/test_e2e.py::TestCoreBackend::test_login_returns_jwt_token PASSED  [ 49%]
 tests/test_e2e.py::TestCoreBackend::test_unauthenticated_access_denied PASSED [ 50%]
@@ -73,9 +73,9 @@ tests/test_e2e.py::TestExportFlow::test_csv_has_headers PASSED           [ 86%]
 tests/test_e2e.py::TestExportFlow::test_risk_zones_has_all_stations PASSED [ 88%]
 tests/test_e2e.py::TestInfrastructureFlow::test_roads_have_status PASSED [ 89%]
 tests/test_e2e.py::TestInfrastructureFlow::test_villages_have_population PASSED [ 90%]
-tests/test_e2e.py::TestFrontendRoutes::test_main_page_loads PASSED       [ 92%]
-tests/test_e2e.py::TestFrontendRoutes::test_all_spa_routes PASSED        [ 93%]
-tests/test_e2e.py::TestFrontendRoutes::test_station_detail_route PASSED  [ 94%]
+tests/test_e2e.py::TestFrontendRoutes::test_main_page_loads SKIPPED      [ 92%]
+tests/test_e2e.py::TestFrontendRoutes::test_all_spa_routes SKIPPED (...) [ 93%]
+tests/test_e2e.py::TestFrontendRoutes::test_station_detail_route SKIPPED [ 94%]
 tests/test_e2e.py::TestAlertWorkflow::test_acknowledge_alert PASSED      [ 96%]
 tests/test_e2e.py::TestSecurity::test_invalid_login_rejected PASSED      [ 97%]
 tests/test_e2e.py::TestSecurity::test_protected_endpoint_without_token PASSED [ 98%]
@@ -203,4 +203,4 @@ tests/test_e2e.py::TestAlertWorkflow::test_acknowledge_alert
     alert.acknowledged_at = datetime.utcnow()
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-====================== 75 passed, 5604 warnings in 27.35s ======================
+================ 70 passed, 5 skipped, 5604 warnings in 26.25s =================
