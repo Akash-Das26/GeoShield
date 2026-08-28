@@ -104,13 +104,13 @@ export default function Alerts() {
             <Bell className="w-6 h-6 text-red-400" />
             {t('alerts')}
           </h1>
-          <p className="text-dark-400 text-sm mt-1">{t('earlyWarningSystem')}</p>
+          <p className="text-dark-400 text-sm mt-1">{t('earlyWarningSubtitle')}</p>
         </div>
         <div className="flex gap-2">
           {[
-            { key: 'list', icon: List, label: 'Alerts' },
-            { key: 'timeline', icon: Clock, label: 'Timeline' },
-            { key: 'history', icon: History, label: '30-Day Trend' },
+            { key: 'list', icon: List, label: t('alerts') },
+            { key: 'timeline', icon: Clock, label: t('timeline') },
+            { key: 'history', icon: History, label: t('thirtyDayTrend') },
           ].map(({ key, icon: Icon, label }) => (
             <button
               key={key}
@@ -132,8 +132,8 @@ export default function Alerts() {
         {[
           { label: t('totalAlerts'), value: stats.total, icon: Bell, color: 'from-blue-500 to-cyan-500' },
           { label: t('active'), value: stats.active, icon: Radio, color: stats.active > 0 ? 'from-red-500 to-orange-500' : 'from-green-500 to-emerald-500', pulse: stats.active > 0 },
-          { label: t('criticalRisk'), value: stats.critical, icon: AlertTriangle, color: 'from-red-600 to-red-500' },
-          { label: t('highRisk'), value: stats.high, icon: AlertTriangle, color: 'from-orange-500 to-amber-500' },
+          { label: t('criticalLevelShort'), value: stats.critical, icon: AlertTriangle, color: 'from-red-600 to-red-500' },
+          { label: t('highRiskLabel'), value: stats.high, icon: AlertTriangle, color: 'from-orange-500 to-amber-500' },
         ].map((card, i) => (
           <div key={i} className={`glass rounded-xl p-4 ${card.pulse ? 'pulse-alert' : ''}`}>
             <div className="flex items-center gap-2 mb-2">
@@ -164,7 +164,7 @@ export default function Alerts() {
                       : 'bg-dark-800 text-dark-400 border border-dark-700 hover:text-white'
                   }`}
                 >
-                  {status === 'all' ? t('all') : status === 'active' ? t('active') : status === 'acknowledged' ? t('acknowledgedCount') : t('resolvedCount')}
+                  {status === 'all' ? t('all') : status === 'active' ? t('active') : status === 'acknowledged' ? t('acknowledged') : t('resolved')}
                 </button>
               ))}
             </div>
@@ -180,7 +180,7 @@ export default function Alerts() {
                       : 'bg-dark-800 text-dark-400 border border-dark-700 hover:text-white'
                   }`}
                 >
-                  {level === 'all' ? t('allLevels') : level === 'critical' ? t('criticalLevel') : level === 'high' ? t('highLevel') : level === 'moderate' ? t('moderateLevel') : t('lowLevel')}
+                  {level === 'all' ? t('allLevels') : level === 'critical' ? t('criticalLevelShort') : level === 'high' ? t('highRisk') : level === 'moderate' ? t('moderateRisk') : t('lowRisk')}
                 </button>
               ))}
             </div>
@@ -234,6 +234,8 @@ export default function Alerts() {
                         </div>
                         <p className="text-sm text-dark-300 mt-2 ml-8">{alert.message}</p>
                       </div>
+
+                      {/* Actions */}
                       <div className="flex items-center gap-2 ml-4">
                         {alert.status === 'active' && (
                           <>
@@ -255,12 +257,12 @@ export default function Alerts() {
                         )}
                         {alert.status === 'acknowledged' && (
                           <span className="px-3 py-1.5 rounded-lg bg-amber-600/10 text-amber-400 border border-amber-600/20 text-xs font-medium">
-                            ⏳ {t('acknowledgedCount')}
+                            ⏳ {t('acknowledged')}
                           </span>
                         )}
                         {alert.status === 'resolved' && (
                           <span className="px-3 py-1.5 rounded-lg bg-green-600/10 text-green-400 border border-green-600/20 text-xs font-medium">
-                            ✅ {t('resolvedCount')}
+                            ✅ {t('resolved')}
                           </span>
                         )}
                       </div>
@@ -280,31 +282,30 @@ export default function Alerts() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <div className="glass rounded-xl p-3 text-center">
                 <p className="text-xl font-bold text-white">{timelineSummary.total_alerts}</p>
-                <p className="text-xs text-dark-400">Total Alerts (72h)</p>
+                <p className="text-xs text-dark-400">{t('totalAlerts')} (72h)</p>
               </div>
               <div className="glass rounded-xl p-3 text-center">
                 <p className="text-xl font-bold text-red-400">{timelineSummary.critical_count}</p>
-                <p className="text-xs text-dark-400">Critical</p>
+                <p className="text-xs text-dark-400">{t('criticalLevelShort')}</p>
               </div>
               <div className="glass rounded-xl p-3 text-center">
                 <p className="text-xl font-bold text-orange-400">{timelineSummary.high_count}</p>
-                <p className="text-xs text-dark-400">High</p>
+                <p className="text-xs text-dark-400">{t('highRiskLabel')}</p>
               </div>
               <div className="glass rounded-xl p-3 text-center">
                 <p className="text-xl font-bold text-amber-400">{timelineSummary.moderate_count}</p>
-                <p className="text-xs text-dark-400">Moderate</p>
+                <p className="text-xs text-dark-400">{t('moderateRisk')}</p>
               </div>
               <div className="glass rounded-xl p-3 text-center">
                 <p className="text-xl font-bold text-white">{timelineSummary.total_affected_population?.toLocaleString()}</p>
-                <p className="text-xs text-dark-400">Total Affected</p>
+                <p className="text-xs text-dark-400">{t('peopleAffected')}</p>
               </div>
             </div>
           )}
-
           {timeline.length === 0 ? (
             <div className="text-center py-12">
               <Clock className="w-12 h-12 text-dark-500 mx-auto mb-3" />
-              <p className="text-dark-400">No timeline data available</p>
+              <p className="text-dark-400">{t('noData')}</p>
             </div>
           ) : (
             <div className="relative pl-8">
@@ -332,7 +333,7 @@ export default function Alerts() {
                             {entry.max_risk.toUpperCase()}
                           </span>
                           <span className="text-xs text-dark-400">
-                            👥 {entry.total_affected.toLocaleString()} affected
+                            👥 {entry.total_affected.toLocaleString()} {t('peopleAffected')}
                           </span>
                         </div>
                       </div>
@@ -361,7 +362,7 @@ export default function Alerts() {
           <div className="glass rounded-xl p-6">
             <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-green-400" />
-              30-Day Alert Trend
+              {t('thirtyDayTrend')}
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={historyData}>
@@ -372,17 +373,17 @@ export default function Alerts() {
                   contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                   labelStyle={{ color: '#fff' }}
                 />
-                <Area type="monotone" dataKey="critical" stackId="1" stroke="#ef4444" fill="#ef4444" fillOpacity={0.3} />
-                <Area type="monotone" dataKey="high" stackId="1" stroke="#f97316" fill="#f97316" fillOpacity={0.3} />
-                <Area type="monotone" dataKey="moderate" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.3} />
-                <Area type="monotone" dataKey="low" stackId="1" stroke="#22c55e" fill="#22c55e" fillOpacity={0.3} />
+                <Area type="monotone" dataKey="critical" stackId="1" stroke="#ef4444" fill="#ef4444" fillOpacity={0.3} name={t('criticalRisk')} />
+                <Area type="monotone" dataKey="high" stackId="1" stroke="#f97316" fill="#f97316" fillOpacity={0.3} name={t('highRisk')} />
+                <Area type="monotone" dataKey="moderate" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.3} name={t('moderateRisk')} />
+                <Area type="monotone" dataKey="low" stackId="1" stroke="#22c55e" fill="#22c55e" fillOpacity={0.3} name={t('lowRisk')} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
           <div className="glass rounded-xl p-6">
             <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-blue-400" />
-              Daily Alert Count
+              {t('dailyAlertCount')}
             </h3>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={historyData}>
@@ -393,7 +394,7 @@ export default function Alerts() {
                   contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                   labelStyle={{ color: '#fff' }}
                 />
-                <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} name={t('totalAlerts')} />
               </BarChart>
             </ResponsiveContainer>
           </div>

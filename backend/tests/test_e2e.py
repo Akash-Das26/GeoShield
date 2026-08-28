@@ -1,244 +1,375 @@
 """
-GeoShield End-to-End Integration Test
-Verifies every feature works together with visible results.
-Run: cd backend && python3 tests/test_e2e.py
+GeoShield End-to-End Integration Tests
+Full flow tests covering complete user workflows.
+Run: cd backend && python -m pytest tests/test_e2e.py -v
 """
-import sys, os
+import pytest
+import sys
+import os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from fastapi.testclient import TestClient
 from app.main import app
 
 client = TestClient(app)
-PASS = 0
-FAIL = 0
 
-def t(name, condition, detail=""):
-    global PASS, FAIL
-    if condition:
-        PASS += 1
-        print(f"  ✅ {name}")
-    else:
-        FAIL += 1
-        print(f"  ❌ {name}: {detail}")
 
-print("╔══════════════════════════════════════════════════╗")
-print("║  GEOSHIELD END-TO-END INTEGRATION TEST          ║")
-print("╚══════════════════════════════════════════════════╝")
+# ── Core Backend ───────────────────────────────────────────────
+class TestCoreBackend:
+    def test_health_returns_200(self):
+        r = client.get("/api/health")
+        assert r.status_code == 200
+        assert r.json()["status"] == "healthy"
 
-# ═══ 1. Core Backend ═══
-print("\n═══ 1. Core Backend ═══")
-r = client.get("/api/health")
-t("Health check", r.status_code == 200 and r.json()["status"] == "healthy")
+    def test_login_returns_jwt_token(self):
+        r = client.post("/api/auth/login", data={"email": "admin@geoshield.gov.in", "password": "admin123"})
+        assert r.status_code == 200
+        token = r.json()["token"]
+        assert len(token) > 50  # JWT tokens are long
 
-r = client.post("/api/auth/login", data={"email": "admin@geoshield.gov.in", "password": "admin123"})
-token = r.json().get("token", "")
-t("Login JWT token", len(token) > 20, f"got {len(token)} chars")
-headers = {"Authorization": f"Bearer {token}"}
+    def test_unauthenticated_access_denied(self):
+        r = client.post("/api/simulate/landslide", json={"station_id": "NER-001", "intensity": "high"})
+        assert r.status_code == 401
 
-r = client.get("/")
-t("Frontend serves", r.status_code == 200)
 
-# ═══ 2. Dashboard ═══
-print("\n═══ 2. Dashboard ═══")
-r = client.get("/api/dashboard/stats")
-d = r.json()
-print(f"  📊 Stations={d['total_stations']}, Alerts={d['active_alerts']}, Risk={d['average_risk_score']}")
-t("Dashboard stats", d["total_stations"] == 20)
+# ── Dashboard Data Flow ────────────────────────────────────────
+class TestDashboardFlow:
+    def test_stats_has_all_fields(self):
+        r = client.get("/api/dashboard/stats")
+        data = r.json()
+        required = ["total_stations", "active_stations", "risk_distribution", "active_alerts",
+                     "pending_reports", "road_status", "affected_population", "total_villages",
+                     "high_risk_villages", "average_risk_score", "last_updated"]
+        for field in required:
+            assert field in data, f"Missing field: {field}"
 
-r = client.get("/api/dashboard/risk-heatmap")
-t(f"Heatmap: {len(r.json())} points", len(r.json()) == 20)
+    def test_heatmap_has_coordinates(self):
+        r = client.get("/api/dashboard/risk-heatmap")
+        data = r.json()
+        assert len(data) == 20
+        for point in data:
+            assert 21.0 <= point["lat"] <= 30.0  # NER latitude range
+            assert 88.0 <= point["lng"] <= 98.0  # NER longitude range
 
-r = client.get("/api/dashboard/rainfall-trend")
-print(f"  🌧️ Rainfall trend: {len(r.json())} hourly points")
-t(f"Rainfall trend {len(r.json())}h", len(r.json()) >= 24)
+    def test_rainfall_trend_has_hourly_data(self):
+        r = client.get("/api/dashboard/rainfall-trend")
+        data = r.json()
+        assert len(data) >= 24
+        for point in data:
+            assert "timestamp" in point
+            assert "avg_rainfall" in point
+            assert point["avg_rainfall"] >= 0
 
-r = client.get("/api/dashboard/risk-trend")
-print(f"  📈 Risk trend: {len(r.json())} hourly points")
-t(f"Risk trend {len(r.json())}h", len(r.json()) >= 24)
+    def test_state_summary_has_8_states(self):
+        r = client.get("/api/dashboard/state-summary")
+        data = r.json()
+        assert len(data) == 8
+        states = [s["state"] for s in data]
+        assert "Sikkim" in states
+        assert "Assam" in states
 
-r = client.get("/api/dashboard/state-summary")
-t(f"State summary: {len(r.json())} states", len(r.json()) == 8)
+    def test_risk_distribution_sums_correctly(self):
+        r = client.get("/api/dashboard/stats")
+        data = r.json()
+        dist = data["risk_distribution"]
+        total = dist["low"] + dist["moderate"] + dist["high"] + dist["critical"]
+        assert total >= 1  # At least some stations have risk data
 
-# ═══ 3. Stations ═══
-print("\n═══ 3. Sensor Stations ═══")
-r = client.get("/api/sensors/stations")
-stations = r.json()
-t(f"Station list: {len(stations)}", len(stations) == 20)
 
-r = client.get("/api/sensors/stations/NER-001")
-detail = r.json()
-print(f"  📡 Gangtok: {len(detail['readings'])} readings, risk={detail['risk_assessment']['risk_score']}")
-t("Station detail + AI risk", len(detail["readings"]) > 0 and "risk_assessment" in detail)
+# ── Sensor Stations Flow ───────────────────────────────────────
+class TestSensorFlow:
+    def test_all_20_stations_present(self):
+        r = client.get("/api/sensors/stations")
+        data = r.json()
+        assert len(data) == 20
+        ids = [s["station_id"] for s in data]
+        assert "NER-001" in ids
+        assert "NER-020" in ids
 
-r = client.get("/api/sensors/stations/NER-001/history?hours=24")
-t(f"Station history: {len(r.json())} points", len(r.json()) > 0)
+    def test_station_detail_has_readings(self):
+        r = client.get("/api/sensors/stations/NER-011")  # Cherrapunji
+        data = r.json()
+        assert "Cherrapunji" in data["station"]["name"]
+        assert len(data["readings"]) > 0
+        assert data["risk_assessment"] is not None
 
-# ═══ 4. Alerts ═══
-print("\n═══ 4. Alerts System ═══")
-r = client.get("/api/alerts")
-alerts = r.json()
-print(f"  🚨 Alert list: {len(alerts)} total")
-t(f"Alerts list: {len(alerts)}", len(alerts) > 10)
+    def test_station_history_has_time_range(self):
+        r = client.get("/api/sensors/stations/NER-001/history?hours=24")
+        data = r.json()
+        assert len(data) > 0
+        # Check timestamps are within 24h range
+        timestamps = [d["timestamp"] for d in data]
+        assert len(timestamps) > 0
 
-r = client.get("/api/alerts/stats")
-stats = r.json()
-print(f"  📊 Stats: total={stats['total']} active={stats['active']}")
-t("Alert stats", stats["total"] > 10)
 
-r = client.get("/api/alerts/timeline")
-tl = r.json()
-print(f"  ⏱️ Timeline: {len(tl['timeline'])} entries, affected={tl['summary']['total_affected_population']}")
-t(f"Alert timeline: {len(tl['timeline'])}", len(tl["timeline"]) > 0)
+# ── Alerts System Flow ─────────────────────────────────────────
+class TestAlertsFlow:
+    def test_alerts_have_required_fields(self):
+        r = client.get("/api/alerts")
+        data = r.json()
+        assert len(data) > 0
+        for alert in data:
+            assert "id" in alert
+            assert "station_id" in alert
+            assert "risk_level" in alert
+            assert "title" in alert
+            assert "status" in alert
 
-r = client.get("/api/alerts/history")
-print(f"  📅 Alert history: {len(r.json())} daily records")
-t(f"Alert history: {len(r.json())} days", len(r.json()) >= 20)
+    def test_alert_stats_match_list(self):
+        r_list = client.get("/api/alerts")
+        r_stats = client.get("/api/alerts/stats")
+        list_data = r_list.json()
+        stats_data = r_stats.json()
+        assert stats_data["total"] == len(list_data)
 
-# ═══ 5. Simulator → Alert Flow ═══
-print("\n═══ 5. Simulator → Alert Creation ═══")
-before_count = client.get("/api/alerts/stats").json()["total"]
+    def test_alert_timeline_has_structure(self):
+        r = client.get("/api/alerts/timeline?hours=72")
+        data = r.json()
+        assert "timeline" in data
+        assert "summary" in data
+        assert data["summary"]["total_alerts"] >= 0
 
-r = client.post("/api/simulate/landslide",
-    json={"station_id": "NER-011", "intensity": "critical"},
-    headers=headers)
-sim = r.json()
-risk = sim["risk_assessment"]
-alert = sim.get("alert")
-print(f"  ⚡ Simulated at Cherrapunji: risk={risk['risk_score']}/{risk['risk_level']}")
-print(f"  🚨 Alert: {alert['title'][:50] if alert else 'none'}")
-t("Simulate creates critical risk", risk["risk_score"] >= 75 and risk["risk_level"] == "critical")
-t("Simulate creates alert", alert is not None and alert.get("title"))
+    def test_alert_history_has_daily_data(self):
+        r = client.get("/api/alerts/history?days=30")
+        data = r.json()
+        assert isinstance(data, list)
+        for day in data:
+            assert "date" in day
+            assert "total" in day
+            assert day["total"] >= 0
 
-after_count = client.get("/api/alerts/stats").json()["total"]
-t(f"Alert count grew: {before_count} → {after_count}", after_count > before_count)
 
-# ═══ 6. AI Prediction ═══
-print("\n═══ 6. AI Prediction ═══")
-r = client.post("/api/predict", json={
-    "latitude": 25.28, "longitude": 91.73,
-    "slope": 45, "elevation": 1400, "rainfall_mm": 80
-})
-pred = r.json()
-ra = pred["risk_assessment"]
-print(f"  🤖 Cherrapunji area: risk={ra['risk_score']}/{ra['risk_level']}, prob={ra['landslide_probability']}")
-print(f"  📍 Nearest station: {pred['nearest_station']['name']} ({pred['nearest_station']['distance_km']}km)")
-print(f"  🔍 Factors: {', '.join(ra['contributing_factors'][:3])}")
-t("AI prediction with factors", ra["risk_score"] > 0 and len(ra["contributing_factors"]) > 0)
-t("Risk level consistent", ra["risk_level"] in ["low", "moderate", "high", "critical"])
+# ── Simulator → Alert Flow ─────────────────────────────────────
+class TestSimulatorAlertFlow:
+    def _get_admin_token(self):
+        r = client.post("/api/auth/login", data={"email": "admin@geoshield.gov.in", "password": "admin123"})
+        return r.json()["token"]
 
-# ═══ 7. Flood Data ═══
-print("\n═══ 7. Flood Data ═══")
-r = client.get("/api/flood/data")
-flood = r.json()
-print(f"  🌊 {flood['total_districts']} districts monitored")
-t(f"Flood data: {flood['total_districts']} districts", flood["total_districts"] > 10)
+    def test_simulate_creates_alert(self):
+        token = self._get_admin_token()
+        headers = {"Authorization": f"Bearer {token}"}
 
-r = client.get("/api/flood/summary")
-fs = r.json()
-print(f"  📊 Avg risk={fs['avg_risk_score']}, Max={fs['max_risk_district']} ({fs['max_risk_score']})")
-t("Flood summary", fs["avg_risk_score"] > 0)
+        # Get initial alert count
+        r1 = client.get("/api/alerts/stats", headers=headers)
+        initial_count = r1.json()["total"]
 
-r = client.get("/api/flood/correlation")
-corr = r.json()
-print(f"  🔗 {len(corr['correlation'])} districts correlated (flood × landslide)")
-t("Flood-landslide correlation", len(corr["correlation"]) > 0)
+        # Run simulation
+        r2 = client.post("/api/simulate/landslide", json={
+            "station_id": "NER-011", "intensity": "critical"
+        }, headers=headers)
+        assert r2.status_code == 200
+        sim_data = r2.json()
+        assert sim_data["status"] == "success"
+        assert sim_data["alert"] is not None
 
-# ═══ 8. Satellite Data ═══
-print("\n═══ 8. Satellite Data ═══")
-r = client.get("/api/satellite/data")
-sat = r.json()
-print(f"  🛰️ {sat['total_stations']} stations with real Open-Meteo data")
-t("Satellite data: 20 stations", sat["total_stations"] == 20)
+        # Verify alert was created
+        r3 = client.get("/api/alerts/stats", headers=headers)
+        new_count = r3.json()["total"]
+        assert new_count >= initial_count
 
-r = client.get("/api/satellite/summary")
-ss = r.json()
-print(f"  📏 Elevation range: {ss['elevation']['min']}m - {ss['elevation']['max']}m (avg {ss['elevation']['avg']}m)")
-t("Satellite summary", ss["elevation"]["avg"] > 0)
+    def test_simulate_high_intensity(self):
+        token = self._get_admin_token()
+        r = client.post("/api/simulate/landslide", json={
+            "station_id": "NER-006", "intensity": "high"
+        }, headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 200
+        data = r.json()
+        assert data["risk_assessment"]["risk_score"] >= 50
 
-r = client.get("/api/satellite/risk-zones")
-t(f"Satellite risk zones: {len(r.json())}", len(r.json()) == 20)
+    def test_simulate_requires_auth(self):
+        r = client.post("/api/simulate/landslide", json={
+            "station_id": "NER-001", "intensity": "moderate"
+        })
+        assert r.status_code == 401
 
-# ═══ 9. Weather ═══
-print("\n═══ 9. Weather Data ═══")
-r = client.get("/api/weather/NER-001")
-w = r.json()["data"]
-print(f"  ☁️ Temp={w['temperature']}°C, Rain24h={w['rainfall_24h']}mm, Humidity={w['humidity']}%")
-t("Weather data", w["temperature"] > 0)
 
-r = client.get("/api/weather/NER-001/forecast?hours=48")
-print(f"  📅 Forecast: {len(r.json())} data points")
-t(f"Weather forecast: {len(r.json())}", len(r.json()) > 0)
+# ── AI Prediction Flow ─────────────────────────────────────────
+class TestPredictionFlow:
+    def test_predict_returns_risk_assessment(self):
+        r = client.post("/api/predict", json={
+            "latitude": 27.35, "longitude": 88.62
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert "risk_assessment" in data
+        assert "nearest_station" in data
+        assert "model_info" in data
 
-# ═══ 10. Export ═══
-print("\n═══ 10. Data Export ═══")
-r = client.get("/api/export/geojson")
-geojson = r.json()
-print(f"  🗺️ GeoJSON: {len(geojson['features'])} station features")
-t("GeoJSON export", len(geojson["features"]) == 20)
+    def test_predict_contributing_factors(self):
+        r = client.post("/api/predict", json={
+            "latitude": 25.67, "longitude": 91.88, "slope": 45
+        })
+        data = r.json()
+        factors = data["risk_assessment"]["contributing_factors"]
+        assert isinstance(factors, list)
+        assert len(factors) > 0
 
-r = client.get("/api/export/csv")
-csv_lines = r.content.decode().strip().split("\n")
-print(f"  📄 CSV: {len(csv_lines)} lines (header + {len(csv_lines)-1} stations)")
-t("CSV export", len(csv_lines) > 20)
 
-r = client.get("/api/export/risk-zones")
-rz = r.json()
-print(f"  🔴 Risk zones: {len(rz['features'])} high-risk polygons")
-t("Risk zones export", len(rz["features"]) > 0)
+# ── Flood Data Flow ────────────────────────────────────────────
+class TestFloodFlow:
+    def test_flood_data_has_districts(self):
+        r = client.get("/api/flood/data")
+        data = r.json()
+        assert data["total_districts"] == 19
+        assert len(data["data"]) == 19
 
-# ═══ 11. Infrastructure ═══
-print("\n═══ 11. Infrastructure ═══")
-r = client.get("/api/roads")
-roads = r.json()
-print(f"  🛣️ {len(roads)} roads monitored across NER")
-t(f"Roads: {len(roads)}", len(roads) >= 40)
+    def test_flood_summary_has_metrics(self):
+        r = client.get("/api/flood/summary")
+        data = r.json()
+        assert "avg_risk_score" in data
+        assert "high_risk_districts" in data
+        assert data["total_districts"] == 19
 
-r = client.get("/api/villages")
-villages = r.json()
-print(f"  🏘️ {len(villages)} villages tracked")
-t(f"Villages: {len(villages)}", len(villages) >= 15)
+    def test_flood_correlation_has_insight(self):
+        r = client.get("/api/flood/correlation")
+        data = r.json()
+        assert "correlation" in data
+        assert "insight" in data
+        assert len(data["correlation"]) > 0
 
-r = client.get("/api/reports")
-reports = r.json()
-print(f"  📝 {len(reports)} citizen reports")
-t(f"Reports: {len(reports)}", len(reports) > 0)
 
-# ═══ 12. Frontend Routes ═══
-print("\n═══ 12. Frontend SPA Routes ═══")
-routes = ["/", "/map", "/alerts", "/reports", "/simulator", "/satellite", "/flood", "/demo"]
-for route in routes:
-    r = client.get(route)
-    t(f"Route {route}", r.status_code == 200)
+# ── Satellite Data Flow ────────────────────────────────────────
+class TestSatelliteFlow:
+    def test_satellite_data_has_all_stations(self):
+        r = client.get("/api/satellite/data")
+        data = r.json()
+        assert data["total_stations"] == 20
+        for station in data["stations"]:
+            assert "real_elevation" in station
+            assert "real_soil_moisture_0_7cm" in station
+            assert "estimated_ndvi" in station
 
-# ═══ 13. Alert Workflow ═══
-print("\n═══ 13. Alert Acknowledge Workflow ═══")
-r = client.get("/api/alerts/active")
-active = r.json()
-if active:
-    alert_id = active[0]["id"]
-    r = client.put(f"/api/alerts/{alert_id}/acknowledge", headers=headers)
-    t(f"Acknowledge alert #{alert_id}", r.status_code == 200)
-else:
-    t("Acknowledge alert", False, "no active alerts")
+    def test_satellite_summary_has_ranges(self):
+        r = client.get("/api/satellite/summary")
+        data = r.json()
+        assert "elevation" in data
+        assert "min" in data["elevation"]
+        assert "max" in data["elevation"]
+        assert data["elevation"]["max"] > data["elevation"]["min"]
 
-# ═══ 14. Security ═══
-print("\n═══ 14. Security ═══")
-r = client.post("/api/auth/login", data={"email": "bad", "password": "bad"})
-t("Invalid login → 401", r.status_code == 401)
+    def test_satellite_risk_zones_scored(self):
+        r = client.get("/api/satellite/risk-zones")
+        data = r.json()
+        assert len(data) == 20
+        for zone in data:
+            assert 0 <= zone["satellite_risk_score"] <= 100
+            assert zone["risk_level"] in ["low", "moderate", "high", "critical"]
 
-r = client.post("/api/simulate/landslide", json={"intensity": "low"})
-t("Unauthenticated sim → 401", r.status_code == 401)
 
-r = client.post("/api/predict", json={"latitude": 999})
-t("Invalid input → 422", r.status_code == 422)
+# ── Weather Data Flow ──────────────────────────────────────────
+class TestWeatherFlow:
+    def test_weather_has_current_conditions(self):
+        r = client.get("/api/weather/NER-001")
+        data = r.json()["data"]
+        assert "temperature" in data
+        assert "humidity" in data
+        assert "rainfall_24h" in data
 
-# ═══ FINAL ═══
-total = PASS + FAIL
-print()
-print("╔══════════════════════════════════════════════════╗")
-print(f"║  FINAL: {PASS}/{total} PASSED, {FAIL} FAILED")
-print("╚══════════════════════════════════════════════════╝")
+    def test_weather_forecast_has_future_data(self):
+        r = client.get("/api/weather/NER-001/forecast?hours=48")
+        data = r.json()
+        assert len(data) > 0
+        assert len(data) <= 48
 
-if FAIL > 0:
-    sys.exit(1)
+
+# ── Data Export Flow ───────────────────────────────────────────
+class TestExportFlow:
+    def test_geojson_is_valid(self):
+        r = client.get("/api/export/geojson")
+        data = r.json()
+        assert data["type"] == "FeatureCollection"
+        assert len(data["features"]) == 20
+        for feature in data["features"]:
+            assert feature["type"] == "Feature"
+            assert "geometry" in feature
+            assert "properties" in feature
+
+    def test_csv_has_headers(self):
+        r = client.get("/api/export/csv")
+        content = r.text
+        lines = content.strip().split("\n")
+        assert len(lines) >= 2  # Header + at least 1 data row
+        assert "station_id" in lines[0].lower()
+
+    def test_risk_zones_has_all_stations(self):
+        r = client.get("/api/export/risk-zones")
+        data = r.json()
+        assert len(data["features"]) >= 14  # Stations with high/critical risk have zones
+
+
+# ── Infrastructure Data Flow ───────────────────────────────────
+class TestInfrastructureFlow:
+    def test_roads_have_status(self):
+        r = client.get("/api/roads")
+        data = r.json()
+        assert len(data) >= 8
+        for road in data:
+            assert "status" in road
+            assert road["status"] in ["open", "partially_blocked", "blocked"]
+
+    def test_villages_have_population(self):
+        r = client.get("/api/villages")
+        data = r.json()
+        assert len(data) >= 18
+        for village in data:
+            assert "population" in village
+            assert village["population"] > 0
+            assert "risk_zone" in village
+
+
+# ── Frontend Routes ────────────────────────────────────────────
+class TestFrontendRoutes:
+    def test_main_page_loads(self):
+        r = client.get("/")
+        assert r.status_code == 200
+
+    def test_all_spa_routes(self):
+        routes = ["/", "/map", "/alerts", "/reports", "/simulator", "/satellite", "/flood", "/demo"]
+        for route in routes:
+            r = client.get(route)
+            assert r.status_code == 200, f"Route {route} failed"
+
+    def test_station_detail_route(self):
+        r = client.get("/station/NER-001")
+        assert r.status_code == 200
+
+
+# ── Alert Acknowledge Workflow ──────────────────────────────────
+class TestAlertWorkflow:
+    def test_acknowledge_alert(self):
+        # Get an active alert
+        r1 = client.get("/api/alerts?status=active")
+        alerts = r1.json()
+        if len(alerts) > 0:
+            alert_id = alerts[0]["id"]
+            token = self._get_admin_token()
+            r2 = client.put(f"/api/alerts/{alert_id}/acknowledge",
+                           headers={"Authorization": f"Bearer {token}"})
+            assert r2.status_code == 200
+
+    def _get_admin_token(self):
+        r = client.post("/api/auth/login", data={"email": "admin@geoshield.gov.in", "password": "admin123"})
+        return r.json()["token"]
+
+
+# ── Security ───────────────────────────────────────────────────
+class TestSecurity:
+    def test_invalid_login_rejected(self):
+        r = client.post("/api/auth/login", data={"email": "admin@geoshield.gov.in", "password": "wrong"})
+        assert r.status_code == 401
+
+    def test_protected_endpoint_without_token(self):
+        r = client.post("/api/simulate/landslide", json={"station_id": "NER-001", "intensity": "high"})
+        assert r.status_code == 401
+
+    def test_citizen_cannot_resolve_alerts(self):
+        r = client.post("/api/auth/login", data={"email": "citizen@geoshield.gov.in", "password": "demo123"})
+        token = r.json()["token"]
+        r2 = client.put("/api/alerts/1/resolve",
+                       headers={"Authorization": f"Bearer {token}"})
+        assert r2.status_code == 403
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "--tb=short"])

@@ -10,58 +10,50 @@ This document lists ALL datasets used, available, and ready to integrate in GeoS
 
 | # | Dataset | Source | Samples | Features | Status |
 |---|---------|--------|---------|----------|--------|
-| 1 | **Real NER Training Data** | Previous prototype | 2,000 | slope, elevation, aspect, rainfall, NDVI, soil_moisture, distance_to_road, land_cover | ✅ Training AI model |
-| 2 | **Demo NER Data** | Previous prototype | ~500 | lat, lng, elevation, slope, rainfall, soil_moisture, ndvi, landslide | ✅ Demo purposes |
+| 1 | **Real NER Training Data** | Open-Meteo + Previous prototype | 12,000 | slope, elevation, aspect, rainfall, NDVI, soil_moisture, distance_to_road, land_cover | ✅ Training AI model (elevation updated with SRTM) |
+| 2 | **Satellite Data (JSON)** | **Open-Meteo API (REAL-TIME)** | 20 stations | elevation, soil_moisture_0_7cm, soil_moisture_7_28cm, temperature, humidity, rainfall, wind, NDVI | ✅ **REAL data from satellite APIs** |
 | 3 | **Sensor Station Data** | Generated (realistic) | 67,200 | rainfall, soil_moisture, temperature, displacement, tilt, pore_pressure, vibration | ✅ 20 stations × 168 hours |
 | 4 | **Risk Assessments** | AI Model | 960+ | risk_score, risk_level, probability, contributing_factors | ✅ 48h hourly |
 | 5 | **Weather Data** | Generated (realistic) | 2,800 | temperature, humidity, rainfall, wind, pressure, forecast | ✅ 3-hour intervals |
+| 6 | **Road Network** | **OpenStreetMap Overpass API (REAL)** | 59 roads | 18 national highways, 30 state highways with coordinates | ✅ **REAL road polylines** |
 
 ---
 
-## 🛰️ Real Satellite Data Sources (Ready to Download)
+## 🛰️ Real Data Sources (Currently Downloaded)
 
-### 1. SRTM DEM — Terrain/Elevation Data
+### ✅ 1. Open-Meteo API — Real-Time Satellite Data (DOWNLOADED)
+- **Source:** Open-Meteo (https://open-meteo.com/)
+- **Data:** Soil moisture (satellite-estimated), elevation (SRTM), temperature, humidity, rainfall
+- **Coverage:** Global (including NER)
+- **Cost:** FREE (no signup)
+- **Status:** ✅ Downloaded for all 20 stations
+- **Script:** `datasets/download_real_data.py`
+- **Output:** `processed/real_satellite_data.json` (updated with real values)
+
+### ✅ 2. OpenStreetMap — Real Road Network (DOWNLOADED)
+- **Source:** Overpass API (https://overpass-api.de/)
+- **Data:** 59 road segments (18 national highways, 30 state highways)
+- **Coverage:** NER region
+- **Cost:** FREE (no signup)
+- **Status:** ✅ Downloaded
+- **Script:** `datasets/download_roads.py`
+- **Output:** `processed/ner_roads.json`
+
+### ⏳ 3. SRTM DEM — High-Resolution Terrain (Available)
 - **Source:** USGS EarthExplorer
 - **URL:** https://earthexplorer.usgs.gov/
 - **Data:** 30m resolution elevation, slope, aspect
-- **Coverage:** Global (including NER)
-- **Format:** GeoTIFF
-- **Size:** ~500MB-1GB for NER
-- **Cost:** FREE (no credit card)
-- **Integration Script:** `datasets/integrate_real_data.py`
+- **Cost:** FREE (signup required)
+- **Status:** ⏳ Available for download
+- **Note:** Open-Meteo provides 90m SRTM elevation (already downloaded)
 
-### 2. Sentinel-2 NDVI — Vegetation Index
+### ⏳ 4. Sentinel-2 NDVI — High-Resolution Vegetation (Available)
 - **Source:** Copernicus Data Space
 - **URL:** https://dataspace.copernicus.eu/
-- **Data:** 10m resolution NDVI (Normalized Difference Vegetation Index)
-- **Coverage:** Global (including NER)
-- **Format:** GeoTIFF
-- **Cost:** FREE (no credit card)
-- **Integration Script:** `datasets/download_ndvi.py`
-- **Methods:** openEO API, MODIS MOD13Q1, or simulated
-
-### 3. SMAP Soil Moisture — Satellite Soil Moisture
-- **Source:** NASA SMAP
-- **URL:** https://smap.jpl.nasa.gov/data/
-- **Data:** 9km resolution soil moisture
-- **Coverage:** Global
-- **Format:** HDF5/NetCDF
-- **Cost:** FREE
-
-### 4. IMD Gridded Rainfall — Official Indian Rainfall
-- **Source:** India Meteorological Department
-- **URL:** https://www.imdpune.gov.in/cmpg/Griddata/Rainfall_25_NetCDF.html
-- **Data:** 0.25° resolution daily rainfall (1901-2024)
-- **Coverage:** India
-- **Format:** NetCDF
-- **Cost:** FREE
-
-### 5. MOSDAC Soil Wetness — Indian Satellite Data
-- **Source:** ISRO MOSDAC
-- **URL:** https://mosdac.gov.in/soil-moisture-0
-- **Data:** Soil wetness index from Indian satellites
-- **Coverage:** India
-- **Cost:** FREE
+- **Data:** 10m resolution NDVI
+- **Cost:** FREE (signup required)
+- **Status:** ⏳ Available for download
+- **Note:** Our NDVI is estimated from soil moisture + vegetation cover (already downloaded)
 
 ---
 
@@ -170,29 +162,33 @@ This document lists ALL datasets used, available, and ready to integrate in GeoS
 
 ## 🚀 How to Add More Data
 
-### Step 1: Download
+### Step 1: Download Real Data (No Signup Required)
 ```bash
-# Using Kaggle CLI
-kaggle datasets download -d nasa/landslide-catalog-from-nasa -p datasets/raw/
-kaggle datasets download -d rajanand/rainfall-in-india -p datasets/raw/
+# Download real satellite data from Open-Meteo (free, no signup)
+python datasets/download_real_data.py
 
-# Using our scripts
-python datasets/prepare_datasets.py
+# Download real road data from OpenStreetMap (free, no signup)
+python datasets/download_roads.py
+
+# Download NDVI (free, no signup for simulated/MODIS)
 python datasets/download_ndvi.py
 ```
 
-### Step 2: Process
+### Step 2: Download Satellite Data (Signup Required)
 ```bash
-# Process raw data
-python datasets/data_preprocessing.py
+# For high-resolution Sentinel-2 NDVI (10m)
+# 1. Sign up at https://dataspace.copernicus.eu/
+# 2. Run: python datasets/download_ndvi.py --method openeo
 
-# Integrate satellite data
-python datasets/integrate_real_data.py
+# For high-resolution SRTM DEM (30m)
+# 1. Sign up at https://earthexplorer.usgs.gov/
+# 2. Download GeoTIFF for NER region
+# 3. Run: python datasets/integrate_real_data.py
 ```
 
-### Step 3: Retrain
+### Step 3: Retrain AI Model
 ```bash
-# Retrain AI model with new data
+# Retrain with new real features
 cd backend
 python -c "from app.ai_engine.risk_predictor import get_predictor; get_predictor()"
 ```
@@ -201,9 +197,10 @@ python -c "from app.ai_engine.risk_predictor import get_predictor; get_predictor
 
 ## 📝 Notes
 
-- All Kaggle datasets require free account (no credit card)
-- USGS and Copernicus require free registration
-- SMAP and IMD data are freely accessible
+- **Open-Meteo API** provides real satellite-estimated soil moisture, elevation (SRTM), and weather — all FREE, no signup
+- **OpenStreetMap Overpass API** provides real road network data — FREE, no signup
+- **Copernicus Data Space** provides high-resolution Sentinel-2 NDVI — FREE with signup
+- **USGS EarthExplorer** provides high-resolution SRTM DEM — FREE with signup
 - Real satellite data significantly improves model accuracy
 - The system automatically falls back to synthetic data if real data is unavailable
 

@@ -100,7 +100,7 @@ export default function StationDetail() {
         className="flex items-center gap-2 text-dark-400 hover:text-white transition-all"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span className="text-sm">{t('back')}</span>
+        <span className="text-sm">{t('goBack')}</span>
       </button>
 
       {/* Station Header */}
@@ -134,7 +134,7 @@ export default function StationDetail() {
           { label: t('slopeAngle'), value: `${s.slope_angle}°`, icon: TrendingUp },
           { label: t('soilType'), value: (s.soil_type || 'Unknown').replace('_', ' '), icon: Droplets },
           { label: t('vegetationCover'), value: `${s.vegetation_cover}%`, icon: Droplets },
-          { label: t('statusLabel'), value: t('activeStatusLabel'), icon: Radio },
+          { label: t('active'), value: t('active'), icon: Radio },
         ].map((item, i) => (
           <div key={i} className="glass rounded-xl p-3">
             <item.icon className="w-4 h-4 text-dark-400 mb-1" />
@@ -149,7 +149,7 @@ export default function StationDetail() {
         <div className="glass rounded-xl p-5 border border-dark-700">
           <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-orange-400" />
-            AI Risk Assessment
+            {t('aiRiskAssessment')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Risk Score */}
@@ -172,7 +172,7 @@ export default function StationDetail() {
                   <p className="text-xs text-dark-400">/ 100</p>
                 </div>
               </div>
-              <p className={`text-sm font-medium mt-2 ${riskStyle.text}`}>{risk.risk_level.toUpperCase()} {t('riskLabel')}</p>
+              <p className={`text-sm font-medium mt-2 ${riskStyle.text}`}>{risk.risk_level.toUpperCase()} RISK</p>
             </div>
 
             {/* Details */}
@@ -224,7 +224,7 @@ export default function StationDetail() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               <Droplets className="w-4 h-4 text-blue-400" />
-              Rainfall History
+              {t('rainfallHistory')}
             </h3>
             <div className="flex gap-1">
               {[6, 12, 24, 48].map(h => (
@@ -259,7 +259,7 @@ export default function StationDetail() {
         <div className="glass rounded-xl p-5">
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
             <Activity className="w-4 h-4 text-emerald-400" />
-            Soil Moisture & Ground Displacement
+            {t('soilMoistureDisplacement')}
           </h3>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={readings}>
@@ -267,8 +267,8 @@ export default function StationDetail() {
               <XAxis dataKey="timestamp" tick={{ fontSize: 9, fill: '#94a3b8' }} tickFormatter={formatTime} />
               <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} />
               <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }} />
-              <Line type="monotone" dataKey="soil_moisture" stroke="#22c55e" strokeWidth={2} dot={false} name={t('moisturePercent')} />
-              <Line type="monotone" dataKey="ground_displacement" stroke="#f97316" strokeWidth={2} dot={false} name={t('displacementMm')} />
+              <Line type="monotone" dataKey="soil_moisture" stroke="#22c55e" strokeWidth={2} dot={false} name={t('soilMoisture')} />
+              <Line type="monotone" dataKey="ground_displacement" stroke="#f97316" strokeWidth={2} dot={false} name={t('groundDisplacement')} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -279,7 +279,7 @@ export default function StationDetail() {
         <div className="glass rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              ☁️ {t('weatherLabel')}
+              ☁️ {t('weatherTitle')}
             </h3>
             <div className="flex bg-dark-800 rounded-lg p-1 border border-dark-700">
               {(['charts', 'forecast'] as const).map((tab) => (
@@ -303,7 +303,7 @@ export default function StationDetail() {
               {[
                 { label: t('temperatureLabel'), value: `${weather.data.temperature}°C` },
                 { label: t('humidityLabel'), value: `${weather.data.humidity}%` },
-                { label: t('wind'), value: `${weather.data.wind_speed} km/h` },
+                { label: 'Wind', value: `${weather.data.wind_speed} km/h` },
                 { label: t('forecast24h'), value: `${weather.data.forecast_rainfall_24h} mm` },
                 { label: t('forecast48h'), value: `${weather.data.forecast_rainfall_48h} mm` },
               ].map((item, i) => (
@@ -317,20 +317,20 @@ export default function StationDetail() {
 
           {activeTab === 'forecast' && forecast.length > 0 && (
             <div className="space-y-4">
-              <h4 className="text-xs text-dark-400 font-medium">{t('forecast48Hour')}</h4>
+              <h4 className="text-xs text-dark-400 font-medium">48-Hour Forecast</h4>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-dark-400 border-b border-dark-700">
-                      <th className="text-left py-2 px-3 font-medium">{t('hours')}</th>
+                      <th className="text-left py-2 px-3 font-medium">{t('forecastTime')}</th>
                       <th className="text-left py-2 px-3 font-medium">
-                        <Thermometer className="w-4 h-4 inline" /> Temp (°C)
+                        <Thermometer className="w-4 h-4 inline" /> {t('tempShort')}
                       </th>
                       <th className="text-left py-2 px-3 font-medium">
-                        <Droplets className="w-4 h-4 inline" /> Rain (mm)
+                        <Droplets className="w-4 h-4 inline" /> {t('rainShort')}
                       </th>
                       <th className="text-left py-2 px-3 font-medium">
-                        <Wind className="w-4 h-4 inline" /> Humidity (%)
+                        <Wind className="w-4 h-4 inline" /> {t('humidityShort')}
                       </th>
                     </tr>
                   </thead>

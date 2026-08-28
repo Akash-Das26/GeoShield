@@ -4,7 +4,7 @@ Data sources: Open-Meteo (elevation, soil moisture, weather), NDVI estimates.
 """
 import json
 import os
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 router = APIRouter(prefix="/api/satellite", tags=["satellite"])
 
@@ -46,7 +46,7 @@ def get_station_satellite_data(station_id: str):
     for station in data:
         if station["id"] == station_id:
             return station
-    return {"error": "Station not found"}
+    raise HTTPException(status_code=404, detail="Station not found")
 
 
 @router.get("/summary")

@@ -152,6 +152,8 @@ def _random_sensor_reading(station, hours_ago=0):
 
 def seed_database():
     """Populate database with realistic demo data."""
+    random.seed(42)
+    np.random.seed(42)
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
 
