@@ -76,7 +76,7 @@ export default function Dashboard() {
           <div className="w-20 h-20 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
           <div className="space-y-2">
             <p className="text-white font-semibold text-lg">{t('initializing')}</p>
-            <p className="text-dark-400 text-sm">{t('connectingSensors')}</p>
+            <p className="text-dark-400 text-sm">{t('connectingSensorsShort')}</p>
             <div className="flex items-center justify-center gap-2 mt-4">
               <div className="flex gap-1">
                 {[0, 1, 2].map(i => (
@@ -114,8 +114,8 @@ export default function Dashboard() {
     { label: t('activeAlerts'), value: stats.active_alerts, icon: AlertTriangle, color: stats.active_alerts > 0 ? 'from-red-500 to-orange-500' : 'from-green-500 to-emerald-500', textColor: stats.active_alerts > 0 ? 'text-red-400' : 'text-green-400', pulse: stats.active_alerts > 0, sub: t('requiresAttention') },
     { label: t('peopleAtRisk'), value: stats.affected_population.toLocaleString(), icon: Users, color: 'from-purple-500 to-pink-500', textColor: 'text-purple-400', sub: t('acrossNER') },
     { label: t('pendingReports'), value: stats.pending_reports, icon: FileText, color: 'from-amber-500 to-yellow-500', textColor: 'text-amber-400', sub: `${stats.recent_reports_24h} ${t('in24h')}` },
-    { label: t('averageRisk'), value: stats.average_risk_score.toFixed(1), icon: TrendingUp, color: 'from-rose-500 to-red-500', textColor: 'text-rose-400', sub: t('outOf100') },
-    { label: t('highRiskVillages'), value: stats.high_risk_villages, icon: MapPin, color: 'from-orange-500 to-red-500', textColor: 'text-orange-400', sub: `of ${stats.total_villages} total` },
+    { label: t('avgRiskScore'), value: stats.average_risk_score.toFixed(1), icon: TrendingUp, color: 'from-rose-500 to-red-500', textColor: 'text-rose-400', sub: t('outOf100') },
+    { label: t('highRiskVillages'), value: stats.high_risk_villages, icon: MapPin, color: 'from-orange-500 to-red-500', textColor: 'text-orange-400', sub: t('ofTotal').replace('{n}', String(stats.total_villages)) },
   ];
 
   const formatTime = (ts: string) => {
@@ -144,10 +144,10 @@ export default function Dashboard() {
   const getTimeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins}m`;
+    if (mins < 60) return `${mins}m ago`;
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h`;
-    return `${Math.floor(hrs / 24)}d`;
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
   };
 
   const handleAcknowledge = async (id: number) => {
@@ -241,10 +241,10 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-white">{t('rainfallTrend')}</h3>
-                    <p className="text-xs text-dark-500">{t('avgAcrossStations')}</p>
+                    <p className="text-xs text-dark-500">48h average across all stations</p>
                   </div>
                 </div>
-                <span className="text-xs text-dark-500">{rainfall.length} {t('dataPoints')}</span>
+                <span className="text-xs text-dark-500">{rainfall.length} data points</span>
               </div>
               <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={rainfall.slice(-48)}>
@@ -271,7 +271,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">{t('riskDistribution')}</h3>
-                  <p className="text-xs text-dark-500">{t('mmAcrossStations').replace('{n}', String(stats.total_stations))}</p>
+                  <p className="text-xs text-dark-500">Across {stats.total_stations} stations</p>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={180}>
@@ -315,7 +315,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">{t('riskTrend')}</h3>
-                  <p className="text-xs text-dark-500">{t('avgAcrossStations')}</p>
+                  <p className="text-xs text-dark-500">48h average risk score</p>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={180}>
@@ -331,7 +331,7 @@ export default function Dashboard() {
                   <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: '#64748b' }} />
                   <Tooltip content={<CustomTooltip />} />
                   <Area type="monotone" dataKey="avg_risk" stroke="transparent" fill="url(#riskGrad)" />
-                  <Line type="monotone" dataKey="avg_risk" stroke="#ef4444" strokeWidth={2} dot={false} name="Risk Score" />
+                  <Line type="monotone" dataKey="avg_risk" stroke="#ef4444" strokeWidth={2} dot={false} name={t('riskScore')} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -344,14 +344,14 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">{t('roadStatus')}</h3>
-                  <p className="text-xs text-dark-500">{t('roadsMonitored').replace('{n}', String(stats.road_status.open + stats.road_status.partially_blocked + stats.road_status.blocked))}</p>
+                  <p className="text-xs text-dark-500">{stats.road_status.open + stats.road_status.partially_blocked + stats.road_status.blocked} {t('roadsMonitored').replace('{n}', '')}</p>
                 </div>
               </div>
               <div className="space-y-4 mt-2">
                 {[
-                  { label: t('openLabel'), value: stats.road_status.open, color: 'bg-green-500', textColor: 'text-green-400', pct: 100 },
-                  { label: t('partiallyBlockedLabel'), value: stats.road_status.partially_blocked, color: 'bg-amber-500', textColor: 'text-amber-400', pct: 60 },
-                  { label: t('blockedLabel'), value: stats.road_status.blocked, color: 'bg-red-500', textColor: 'text-red-400', pct: 30 },
+                  { label: t('open'), value: stats.road_status.open, color: 'bg-green-500', textColor: 'text-green-400', pct: 100 },
+                  { label: t('partiallyBlocked'), value: stats.road_status.partially_blocked, color: 'bg-amber-500', textColor: 'text-amber-400', pct: 60 },
+                  { label: t('blocked'), value: stats.road_status.blocked, color: 'bg-red-500', textColor: 'text-red-400', pct: 30 },
                 ].map((item, i) => (
                   <div key={i}>
                     <div className="flex justify-between text-xs mb-1.5">
@@ -359,7 +359,7 @@ export default function Dashboard() {
                         <div className={`w-2 h-2 rounded-full ${item.color}`} />
                         {item.label}
                       </span>
-                      <span className={`font-semibold ${item.textColor}`}>{t('roadsCount').replace('{n}', String(item.value))}</span>
+                      <span className={`font-semibold ${item.textColor}`}>{item.value} {t('roads')}</span>
                     </div>
                     <div className="h-2 bg-dark-800 rounded-full overflow-hidden">
                       <div className={`h-full ${item.color} rounded-full transition-all duration-1000`} style={{ width: `${Math.max(item.pct, item.value * 20)}%` }} />
@@ -372,8 +372,8 @@ export default function Dashboard() {
                   <Zap className={`w-4 h-4 ${stats.road_status.blocked > 0 ? 'text-red-400' : 'text-green-400'}`} />
                   <span className="text-xs text-dark-300">
                     {stats.road_status.blocked > 0
-                      ? t('roadBlockedAlt').replace('{n}', String(stats.road_status.blocked))
-                      : t('allRoutesAccessible')}
+                      ? `${stats.road_status.blocked} ${t('roadBlocked')}`
+                      : t('allRoutesOpen')}
                   </span>
                 </div>
               </div>
@@ -387,7 +387,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">{t('stateSummary')}</h3>
-                  <p className="text-xs text-dark-500">{t('nerStatesMonitored')}</p>
+                  <p className="text-xs text-dark-500">8 NER states monitored</p>
                 </div>
               </div>
               <div className="space-y-2">
@@ -400,7 +400,7 @@ export default function Dashboard() {
                       }`} />
                       <div>
                         <p className="text-xs font-medium text-white">{state.state}</p>
-                        <p className="text-[10px] text-dark-500">{t('stationsCount').replace('{n}', String(state.stations))}</p>
+                        <p className="text-[10px] text-dark-500">{state.stations} stations</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -412,7 +412,7 @@ export default function Dashboard() {
                       </span>
                       {state.critical_count > 0 && (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-600/20 text-red-400 border border-red-600/30">
-                          {state.critical_count} {t('crit')}
+                          {state.critical_count} CRIT
                         </span>
                       )}
                     </div>
@@ -536,7 +536,7 @@ export default function Dashboard() {
                   <div className="text-center p-1.5 rounded-lg bg-dark-800/50">
                     <TrendingUp className="w-3 h-3 text-orange-400 mx-auto mb-0.5" />
                     <p className="text-xs font-bold text-white">{station.slope_angle}°</p>
-                    <p className="text-[9px] text-dark-500">{t('slope')}</p>
+                    <p className="text-[9px] text-dark-500">slope</p>
                   </div>
                 </div>
                 {/* Risk bar */}
@@ -548,7 +548,7 @@ export default function Dashboard() {
                   }`} style={{ width: `${riskScore}%` }} />
                 </div>
                 <div className="flex justify-between mt-1">
-                  <span className="text-[9px] text-dark-500">{t('riskScore')}</span>
+                  <span className="text-[9px] text-dark-500">{t('riskScoreLabel')}</span>
                   <span className="text-[9px] text-dark-400 font-medium">{riskScore}/100</span>
                 </div>
               </div>
@@ -620,20 +620,20 @@ export default function Dashboard() {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <Radio className="w-3 h-3 text-green-400" />
-            <span className="text-[10px] text-dark-400">{stats.active_stations} {t('sensorsOnline')}</span>
+            <span className="text-[10px] text-dark-400">{stats.active_stations} sensors online</span>
           </div>
           <div className="flex items-center gap-1.5">
             <AlertTriangle className="w-3 h-3 text-red-400" />
-            <span className="text-[10px] text-dark-400">{stats.active_alerts} {t('activeAlertsCount')}</span>
+            <span className="text-[10px] text-dark-400">{stats.active_alerts} active alerts</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Building2 className="w-3 h-3 text-purple-400" />
-            <span className="text-[10px] text-dark-400">{stats.total_villages} {t('villagesMonitored')}</span>
+            <span className="text-[10px] text-dark-400">{stats.total_villages} villages monitored</span>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
           <Clock className="w-3 h-3 text-dark-500" />
-          <span className="text-[10px] text-dark-500">{t('lastUpdate')}: {new Date(stats.last_updated).toLocaleTimeString()}</span>
+          <span className="text-[10px] text-dark-500">Last update: {new Date(stats.last_updated).toLocaleTimeString()}</span>
         </div>
       </div>
     </div>

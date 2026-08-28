@@ -11,19 +11,38 @@ router = APIRouter(prefix="/api/sensors", tags=["sensors"])
 
 @router.get("/stations")
 def get_stations(db: Session = Depends(get_db)):
+    # Subquery: latest reading per station (eliminates N+1)
+    latest_reading_sq = db.query(
+        SensorReading.station_id,
+        SensorReading.rainfall_mm,
+        SensorReading.soil_moisture,
+        SensorReading.ground_displacement,
+        SensorReading.timestamp,
+        func.row_number().over(
+            partition_by=SensorReading.station_id,
+            order_by=SensorReading.timestamp.desc()
+        ).label('rn')
+    ).subquery()
+    latest_readings = {r.station_id: r for r in db.query(latest_reading_sq).filter(latest_reading_sq.c.rn == 1).all()}
+
+    # Subquery: latest risk assessment per station
+    latest_risk_sq = db.query(
+        RiskAssessment.station_id,
+        RiskAssessment.risk_level,
+        RiskAssessment.risk_score,
+        RiskAssessment.landslide_probability,
+        func.row_number().over(
+            partition_by=RiskAssessment.station_id,
+            order_by=RiskAssessment.timestamp.desc()
+        ).label('rn')
+    ).subquery()
+    latest_risks = {r.station_id: r for r in db.query(latest_risk_sq).filter(latest_risk_sq.c.rn == 1).all()}
+
     stations = db.query(SensorStation).filter(SensorStation.is_active == True).all()
     result = []
     for s in stations:
-        # Get latest reading
-        latest = db.query(SensorReading).filter(
-            SensorReading.station_id == s.station_id
-        ).order_by(desc(SensorReading.timestamp)).first()
-
-        # Get latest risk assessment
-        risk = db.query(RiskAssessment).filter(
-            RiskAssessment.station_id == s.station_id
-        ).order_by(desc(RiskAssessment.timestamp)).first()
-
+        latest = latest_readings.get(s.station_id)
+        risk = latest_risks.get(s.station_id)
         result.append({
             "id": s.id,
             "station_id": s.station_id,
@@ -42,7 +61,7 @@ def get_stations(db: Session = Depends(get_db)):
                 "rainfall_mm": latest.rainfall_mm if latest else 0,
                 "soil_moisture": latest.soil_moisture if latest else 0,
                 "ground_displacement": latest.ground_displacement if latest else 0,
-                "timestamp": latest.timestamp.isoformat() if latest else None,
+                "timestamp": latest.timestamp.isoformat() if latest and latest.timestamp else None,
             } if latest else None,
             "risk": {
                 "level": risk.risk_level if risk else "low",
