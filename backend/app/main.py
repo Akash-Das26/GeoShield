@@ -10,10 +10,11 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 from starlette.responses import FileResponse
+from app.middleware.rate_limiter import RateLimiter
 
 from app.database import engine, Base, SessionLocal
 from app.routers import sensors, dashboard, alerts, reports, weather, simulator, satellite
-from app.routers import predict, alerts_timeline
+from app.routers import predict, alerts_timeline, flood
 from app.auth import authenticate_user, create_token
 
 
@@ -90,6 +91,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Rate limiting: 100 req/min general, 10 req/min for auth
+app.add_middleware(RateLimiter, general_limit=100, auth_limit=10, window_seconds=60)
+
 app.include_router(sensors.router)
 app.include_router(dashboard.router)
 app.include_router(alerts.router)
@@ -99,6 +103,7 @@ app.include_router(simulator.router)
 app.include_router(satellite.router)
 app.include_router(predict.router)
 app.include_router(alerts_timeline.router)
+app.include_router(flood.router)
 
 
 @app.get("/api/health")
@@ -122,10 +127,31 @@ def login(email: str = Form(...), password: str = Form(...)):
     }
 
 
-@app.websocket("/ws/alerts")
-async def websocket_alerts(websocket: WebSocket):
+@app.websocket("/ws/alerts/{district}")
+async def websocket_alerts(websocket: WebSocket, district: str = "all"):
+    """District-scoped WebSocket for real-time alert broadcasting."""
     await manager.connect(websocket)
     try:
+        # Send connection confirmation with district scope
+        await websocket.send_json({"type": "connected", "district": district, "message": f"Connected to {district} alert stream"})
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_json({"type": "pong"})
+            elif data.startswith("subscribe:"):
+                # Allow changing district subscription
+                new_district = data.split(":", 1)[1]
+                await websocket.send_json({"type": "subscribed", "district": new_district})
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
+
+@app.websocket("/ws/alerts")
+async def websocket_alerts_all(websocket: WebSocket):
+    """Legacy endpoint - connects to all districts."""
+    await manager.connect(websocket)
+    try:
+        await websocket.send_json({"type": "connected", "district": "all"})
         while True:
             data = await websocket.receive_text()
             if data == "ping":

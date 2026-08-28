@@ -58,14 +58,63 @@ NER_VILLAGES = [
 ]
 
 NER_ROADS = [
-    {"name": "NH-10 (Siliguri-Gangtok)", "type": "national_highway", "slat": 26.7200, "slng": 88.3900, "elat": 27.3389, "elng": 88.6065, "status": "open"},
-    {"name": "NH-37 (Guwahati-Jorhat)", "type": "national_highway", "slat": 26.1445, "slng": 91.7362, "elat": 26.7500, "elng": 94.2000, "status": "partially_blocked"},
-    {"name": "NH-2 (Dimapur-Kohima)", "type": "national_highway", "slat": 25.9000, "slng": 93.7266, "elat": 25.6586, "elng": 94.1086, "status": "open"},
-    {"name": "SH-1 (Aizawl-Lunglei)", "type": "state_highway", "slat": 23.7271, "slng": 92.7176, "elat": 22.9000, "elng": 92.7500, "status": "blocked"},
-    {"name": "NH-6 (Shillong-Tura)", "type": "national_highway", "slat": 25.5788, "slng": 91.8933, "elat": 25.5140, "elng": 90.2200, "status": "open"},
-    {"name": "NH-29 (Guwahati-Shillong)", "type": "national_highway", "slat": 26.1445, "slng": 91.7362, "elat": 25.5788, "elng": 91.8933, "status": "open"},
-    {"name": "SH-4 (Haflong-North Cachar)", "type": "state_highway", "slat": 25.4500, "slng": 93.1800, "elat": 25.8000, "elng": 93.4500, "status": "partially_blocked"},
-    {"name": "NH-415 (Itanagar-Bomdila)", "type": "national_highway", "slat": 27.0844, "slng": 93.6920, "elat": 27.2500, "elng": 92.4200, "status": "open"},
+    # ═══ SIKKIM ═══
+    {"name": "NH-10 (Siliguri-Gangtok)", "type": "national_highway", "slat": 26.72, "slng": 88.39, "elat": 27.34, "elng": 88.61, "status": "open"},
+    {"name": "NH-10 (Rangpo-Gangtok)", "type": "national_highway", "slat": 27.12, "slng": 88.54, "elat": 27.34, "elng": 88.61, "status": "open"},
+    {"name": "NH-510 (Singtam-Mangan)", "type": "national_highway", "slat": 27.22, "slng": 88.51, "elat": 27.51, "elng": 88.53, "status": "partially_blocked"},
+    {"name": "SH-4 (Namchi-Jorethang)", "type": "state_highway", "slat": 27.17, "slng": 88.55, "elat": 27.07, "elng": 88.42, "status": "open"},
+    {"name": "NH-710 (Gangtok-Tsingaling)", "type": "national_highway", "slat": 27.34, "slng": 88.61, "elat": 27.45, "elng": 88.72, "status": "open"},
+    # ═══ ARUNACHAL PRADESH ═══
+    {"name": "NH-415 (Itanagar-Bomdila)", "type": "national_highway", "slat": 27.08, "slng": 93.69, "elat": 27.25, "elng": 92.42, "status": "open"},
+    {"name": "NH-13 (Bomdila-Tawang)", "type": "national_highway", "slat": 27.25, "slng": 92.42, "elat": 27.59, "elng": 91.88, "status": "partially_blocked"},
+    {"name": "NH-415 (Naharlagun-Itanagar)", "type": "national_highway", "slat": 27.10, "slng": 93.72, "elat": 27.08, "elng": 93.69, "status": "open"},
+    {"name": "NH-229 (Ziro-Itanagar)", "type": "national_highway", "slat": 27.59, "slng": 93.85, "elat": 27.08, "elng": 93.69, "status": "open"},
+    {"name": "NH-13 (Pasighat-Jerigaon)", "type": "national_highway", "slat": 28.07, "slng": 95.33, "elat": 27.85, "elng": 94.90, "status": "open"},
+    {"name": "NH-52 (Along-Pasighat)", "type": "national_highway", "slat": 27.60, "slng": 94.70, "elat": 28.07, "elng": 95.33, "status": "open"},
+    # ═══ ASSAM ═══
+    {"name": "NH-37 (Guwahati-Jorhat)", "type": "national_highway", "slat": 26.14, "slng": 91.74, "elat": 26.75, "elng": 94.20, "status": "partially_blocked"},
+    {"name": "NH-29 (Guwahati-Shillong)", "type": "national_highway", "slat": 26.14, "slng": 91.74, "elat": 25.58, "elng": 91.89, "status": "open"},
+    {"name": "NH-31 (Guwahati-Tezpur)", "type": "national_highway", "slat": 26.14, "slng": 91.74, "elat": 26.65, "elng": 92.79, "status": "open"},
+    {"name": "NH-2 (Dimapur-Dhubri)", "type": "national_highway", "slat": 25.90, "slng": 93.73, "elat": 26.02, "elng": 90.00, "status": "open"},
+    {"name": "NH-44 (Silchar-Sonamura)", "type": "national_highway", "slat": 24.82, "slng": 92.80, "elat": 23.84, "elng": 91.29, "status": "open"},
+    {"name": "NH-54 (Haflong-Silchar)", "type": "national_highway", "slat": 25.45, "slng": 93.18, "elat": 24.82, "elng": 92.80, "status": "partially_blocked"},
+    {"name": "NH-36 (Lumding-Haflong)", "type": "national_highway", "slat": 25.85, "slng": 93.10, "elat": 25.45, "elng": 93.18, "status": "blocked"},
+    {"name": "NH-62 (Tura-Guwahati)", "type": "national_highway", "slat": 25.51, "slng": 90.22, "elat": 26.14, "elng": 91.74, "status": "open"},
+    {"name": "SH-3 (Jorhat-Majuli)", "type": "state_highway", "slat": 26.75, "slng": 94.20, "elat": 26.95, "elng": 94.12, "status": "open"},
+    # ═══ MEGHALAYA ═══
+    {"name": "NH-6 (Shillong-Tura)", "type": "national_highway", "slat": 25.58, "slng": 91.89, "elat": 25.51, "elng": 90.22, "status": "open"},
+    {"name": "NH-40 (Shillong-Dawki)", "type": "national_highway", "slat": 25.58, "slng": 91.89, "elat": 25.18, "elng": 92.03, "status": "open"},
+    {"name": "NH-44 (Shillong-Dimapur)", "type": "national_highway", "slat": 25.58, "slng": 91.89, "elat": 25.90, "elng": 93.73, "status": "open"},
+    {"name": "NH-51 (Jowai-Shillong)", "type": "national_highway", "slat": 25.45, "slng": 92.19, "elat": 25.58, "elng": 91.89, "status": "open"},
+    {"name": "SH-5 (Cherrapunji-Dawki)", "type": "state_highway", "slat": 25.28, "slng": 91.73, "elat": 25.18, "elng": 92.03, "status": "partially_blocked"},
+    # ═══ NAGALAND ═══
+    {"name": "NH-2 (Dimapur-Kohima)", "type": "national_highway", "slat": 25.90, "slng": 93.73, "elat": 25.66, "elng": 94.11, "status": "open"},
+    {"name": "NH-2 (Kohima-Mokokchung)", "type": "national_highway", "slat": 25.66, "slng": 94.11, "elat": 26.32, "elng": 94.52, "status": "open"},
+    {"name": "NH-61 (Mokokchung-Mon)", "type": "national_highway", "slat": 26.32, "slng": 94.52, "elat": 26.72, "elng": 94.87, "status": "partially_blocked"},
+    {"name": "NH-129 (Tuensang-Kiphire)", "type": "national_highway", "slat": 26.27, "slng": 94.82, "elat": 25.92, "elng": 94.95, "status": "open"},
+    # ═══ MANIPUR ═══
+    {"name": "NH-2 (Imphal-Dimapur)", "type": "national_highway", "slat": 24.82, "slng": 93.94, "elat": 25.90, "elng": 93.73, "status": "open"},
+    {"name": "NH-37 (Imphal-Jiribam)", "type": "national_highway", "slat": 24.82, "slng": 93.94, "elat": 24.80, "elng": 93.10, "status": "open"},
+    {"name": "NH-102 (Imphal-Moreh)", "type": "national_highway", "slat": 24.82, "slng": 93.94, "elat": 24.48, "elng": 94.00, "status": "open"},
+    {"name": "NH-129A (Churachandpur-Imphal)", "type": "national_highway", "slat": 24.33, "slng": 93.68, "elat": 24.82, "elng": 93.94, "status": "partially_blocked"},
+    {"name": "SH-20 (Senapati-Imphal)", "type": "state_highway", "slat": 25.40, "slng": 94.00, "elat": 24.82, "elng": 93.94, "status": "open"},
+    # ═══ MIZORAM ═══
+    {"name": "NH-54 (Aizawl-Lunglei)", "type": "national_highway", "slat": 23.73, "slng": 92.72, "elat": 22.90, "elng": 92.75, "status": "blocked"},
+    {"name": "NH-54 (Aizawl-Silchar)", "type": "national_highway", "slat": 23.73, "slng": 92.72, "elat": 24.82, "elng": 92.80, "status": "open"},
+    {"name": "NH-306 (Sairang-Kolasib)", "type": "national_highway", "slat": 23.82, "slng": 92.67, "elat": 24.22, "elng": 92.68, "status": "open"},
+    {"name": "SH-2 (Aizawl-Champhai)", "type": "state_highway", "slat": 23.73, "slng": 92.72, "elat": 23.47, "elng": 93.38, "status": "open"},
+    {"name": "SH-6 (Lunglei-Saiha)", "type": "state_highway", "slat": 22.90, "slng": 92.75, "elat": 22.48, "elng": 93.00, "status": "partially_blocked"},
+    # ═══ TRIPURA ═══
+    {"name": "NH-8 (Agartala-Udaipur)", "type": "national_highway", "slat": 23.83, "slng": 91.29, "elat": 23.53, "elng": 91.49, "status": "open"},
+    {"name": "NH-44 (Agartala-Silchar)", "type": "national_highway", "slat": 23.83, "slng": 91.29, "elat": 24.82, "elng": 92.80, "status": "open"},
+    {"name": "NH-8 (Agartala-Dharmanagar)", "type": "national_highway", "slat": 23.83, "slng": 91.29, "elat": 24.37, "elng": 92.17, "status": "open"},
+    {"name": "SH-3 (Kailashahar-Udaipur)", "type": "state_highway", "slat": 24.33, "slng": 92.02, "elat": 23.53, "elng": 91.49, "status": "open"},
+    # ═══ CROSS-STATE ═══
+    {"name": "NH-31A (Siliguri-Gelephu)", "type": "national_highway", "slat": 26.72, "slng": 88.39, "elat": 26.87, "elng": 89.85, "status": "open"},
+    {"name": "NH-127B (Goalpara-Tura)", "type": "national_highway", "slat": 26.17, "slng": 90.62, "elat": 25.51, "elng": 90.22, "status": "open"},
+    {"name": "NH-29A (Byrnihat-Guwahati)", "type": "national_highway", "slat": 26.10, "slng": 91.85, "elat": 26.14, "elng": 91.74, "status": "open"},
+    {"name": "NH-62A (Tura-Baghmara)", "type": "national_highway", "slat": 25.51, "slng": 90.22, "elat": 25.30, "elng": 90.05, "status": "partially_blocked"},
+    {"name": "NH-154 (Patharkandi-Karimganj)", "type": "national_highway", "slat": 24.85, "slng": 92.55, "elat": 24.87, "elng": 92.38, "status": "open"},
 ]
 
 
