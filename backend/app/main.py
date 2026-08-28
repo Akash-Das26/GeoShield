@@ -85,6 +85,28 @@ def init_database():
         db.close()
     print("[GeoShield] ✅ Database ready")
 
+    # Auto-refresh satellite data if stale (>6 hours old)
+    try:
+        import json as _json
+        from datetime import datetime as _dt, timedelta as _td
+        sat_path = os.path.join(os.path.dirname(__file__), "..", "..", "datasets", "processed", "real_satellite_data.json")
+        if os.path.exists(sat_path):
+            with open(sat_path) as f:
+                sat_data = _json.load(f)
+            if sat_data:
+                last_update = sat_data[0].get("last_updated", "")
+                if last_update:
+                    try:
+                        last_dt = _dt.fromisoformat(last_update)
+                        if _dt.utcnow() - last_dt > _td(hours=6):
+                            print("[GeoShield] 🛰️  Satellite data stale (>6h), run 'python datasets/download_real_data.py' to refresh")
+                        else:
+                            print(f"[GeoShield] 🛰️  Satellite data fresh (updated {last_update})")
+                    except (ValueError, TypeError):
+                        pass
+    except Exception as e:
+        print(f"[GeoShield] ⚠️  Satellite check skipped: {e}")
+
 
 init_database()
 
