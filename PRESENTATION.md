@@ -119,7 +119,7 @@ Theme: Disaster Management
 | Active Alerts | **5** high-risk alerts |
 | Monitored Roads | **8** (1 blocked, 2 partial) |
 | Tracked Villages | **18** (6 high-risk) |
-| Citizens at Risk | **8,087 people** |
+| Citizens at Risk | **31,977 people** |
 | Citizen Reports | **15** submitted |
 
 ### Highest Risk Areas
@@ -217,7 +217,7 @@ Sensor Reading → AI Risk Assessment → Risk Score → Alert Generation
 | Criteria | Our Strength |
 |----------|-------------|
 | **Innovation** | AI ensemble model + real-time GIS + citizen crowdsourcing |
-| **Impact** | 8,087 people protected, 20 stations, 8 states |
+| **Impact** | 31,977 people protected, 20 stations, 8 states |
 | **Scalability** | Cloud-ready architecture, adding stations is trivial |
 | **Feasibility** | Working prototype with 67,200+ data points |
 | **Sustainability** | Open-source, low-cost IoT sensors, government integration |

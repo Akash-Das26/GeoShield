@@ -204,14 +204,39 @@ def seed_database():
             )
             db.add(assessment)
 
-        # Seed some alerts for high-risk stations
-        print("[Seed] Seeding alerts...")
-        alert_stations = [s for s in NER_STATIONS if s["slope_angle"] > 38 or s["elevation"] > 1500]
+        # Seed alerts spread across 30 days for history chart
+        print("[Seed] Seeding alerts (30-day history)...")
+        alert_stations = [s for s in NER_STATIONS if s["slope_angle"] > 35 or s["elevation"] > 1500]
+        risk_levels = ["low", "moderate", "high", "high", "critical", "moderate", "low", "high"]
+        statuses = ["active", "acknowledged", "resolved"]
+        for day_offset in range(30):
+            # 2-4 alerts per day
+            num_alerts = random.randint(2, 4)
+            for _ in range(num_alerts):
+                s = random.choice(alert_stations)
+                rl = random.choice(risk_levels)
+                alert_time = datetime.utcnow() - timedelta(days=day_offset, hours=random.randint(0, 23))
+                pop_map = {"low": 100, "moderate": 800, "high": 3000, "critical": 12000}
+                alert = Alert(
+                    station_id=s["station_id"],
+                    risk_level=rl,
+                    title=f"{rl.upper()} Risk - {s['name']}",
+                    message=f"{rl.title()} landslide risk detected at {s['name']}, {s['village']}, {s['district']}.",
+                    status=random.choice(statuses) if day_offset > 0 else "active",
+                    affected_population=pop_map[rl] + random.randint(-200, 500),
+                    nearby_villages=json.dumps([s["village"]]),
+                    latitude=s["lat"],
+                    longitude=s["lng"],
+                    created_at=alert_time,
+                )
+                db.add(alert)
+
+        # Also add 5 active alerts for the current dashboard
         for s in alert_stations[:5]:
             alert = Alert(
                 station_id=s["station_id"],
                 risk_level="high",
-                title=f"Landslide Risk Alert - {s['name']}",
+                title=f"Active Landslide Risk - {s['name']}",
                 message=f"High landslide risk detected at {s['name']}, {s['village']}, {s['district']}. Heavy rainfall and steep slope conditions.",
                 status="active",
                 affected_population=random.randint(500, 5000),

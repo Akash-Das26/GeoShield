@@ -184,7 +184,7 @@ def _run_simulation(db: Session, station_id: Optional[str], intensity: str,
 
 
 @router.post("/landslide")
-def simulate_landslide(request: LandslideRequest, db: Session = Depends(get_db), user: dict = Depends(require_role("admin", "field_officer", "district_admin"))):
+def simulate_landslide(request: LandslideRequest, db: Session = Depends(get_db), user: dict = Depends(require_role("admin", "field_officer", "district_admin", "citizen"))):
     """
     Simulate a landslide event at a station.
     Creates spike in sensor readings, generates risk assessment, creates alert.
@@ -199,7 +199,7 @@ def simulate_landslide(request: LandslideRequest, db: Session = Depends(get_db),
 
 
 @router.post("/batch")
-def simulate_batch(count: int = 5, db: Session = Depends(get_db), user: dict = Depends(require_role("admin", "field_officer", "district_admin"))):
+def simulate_batch(count: int = 5, db: Session = Depends(get_db), user: dict = Depends(require_role("admin", "field_officer", "district_admin", "citizen"))):
     """Simulate multiple landslide events across different stations."""
     results = []
     stations = db.query(SensorStation).filter(SensorStation.slope_angle > 30).all()

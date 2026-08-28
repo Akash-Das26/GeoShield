@@ -53,7 +53,7 @@
 | # | Feature | Description |
 |---|---------|-------------|
 | 1 | **Real-Time Monitoring** | 20 IoT sensor stations across 8 NER states |
-| 2 | **AI Risk Prediction** | Random Forest + Gradient Boosting ensemble (79.4% accuracy) |
+| 2 | **AI Risk Prediction** | Random Forest + Gradient Boosting ensemble (78.2% accuracy) |
 | 3 | **Early Warning** | Multi-level alerts with SMS/push notification support |
 | 4 | **GIS Risk Mapping** | Interactive Leaflet.js heatmaps with click-to-predict |
 | 5 | **Citizen Reporting** | Geo-tagged photo/video reports from field officers |
@@ -88,7 +88,7 @@
 │  │ Random Forest        │ │ Gradient Boosting    │     │
 │  │ (200 trees, d=15)    │ │ (150 trees, d=8)     │     │
 │  └──────────────────────┘ └──────────────────────┘     │
-│  Training: 12,000 NER samples | 9 features | 79.4% acc │
+│  Training: 12,000 NER samples | 9 features | 78.2% acc │
 ├─────────────────────────────────────────────────────────┤
 │                    DATA LAYER                            │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
@@ -108,7 +108,7 @@
 - **Algorithm:** Voting Classifier (RF + Gradient Boosting)
 - **Training Data:** 12,000 real NER terrain samples
 - **Features:** 9 input features
-- **Accuracy:** 79.4% (test) / 99.7% (train)
+- **Accuracy:** 78.2% (test) / 99.9% (train)
 
 ### Feature Importance
 
@@ -163,7 +163,7 @@
 |--------|-------|
 | Active Sensors | 20 across 8 states |
 | Active Alerts | 5 high-risk warnings |
-| People at Risk | 8,087 |
+| People at Risk | 31,977 |
 | Avg Risk Score | 43.0/100 |
 | Villages Monitored | 18 (6 high-risk) |
 | Roads Monitored | 8 (5 open, 2 partial, 1 blocked) |
@@ -303,7 +303,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **AI Model Accuracy** | 79.4% (tested on 12,000 samples) |
+| **AI Model Accuracy** | 78.2% (tested on 12,000 samples) |
 | **Sensor Stations** | 20 across 8 NER states |
 | **API Endpoints** | 17 fully functional |
 | **Historical Events** | 44 documented (2011-2024) |
@@ -313,7 +313,7 @@
 | **Deployment Ready** | Docker, Railway, Render |
 
 ### Potential Impact
-- **8,087 people** currently at risk can be warned
+- **31,977 people** currently at risk can be warned
 - **31 road blockades** per year can be predicted
 - **6+ hours** advance warning for landslide events
 - **Real-time** monitoring replacing manual inspection
