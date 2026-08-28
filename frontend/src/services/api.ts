@@ -1,12 +1,43 @@
 import axios from 'axios';
 import { getCurrentLanguage } from '../i18n/translations';
 
-const API_BASE = '/api';
+// Detect if running in mobile app (Capacitor)
+const isMobile = () => {
+  try {
+    return typeof (window as any).Capacitor !== 'undefined';
+  } catch { return false; }
+};
+
+// For mobile: use configurable server URL (stored in localStorage)
+// For web: use relative URL (same origin)
+const getApiBase = () => {
+  if (isMobile()) {
+    const savedUrl = localStorage.getItem('geoshield_server_url');
+    if (savedUrl) return `${savedUrl}/api`;
+    // Default to localhost for development
+    return 'http://localhost:8000/api';
+  }
+  return '/api';
+};
+
+const API_BASE = getApiBase();
 
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 15000,
+  timeout: 20000,
 });
+
+// Allow mobile app to change server URL
+export const setServerUrl = (url: string) => {
+  localStorage.setItem('geoshield_server_url', url);
+  window.location.reload();
+};
+
+export const getServerUrl = () => {
+  return localStorage.getItem('geoshield_server_url') || '';
+};
+
+export const isMobileApp = isMobile;
 
 // --- JWT token management ---
 const TOKEN_KEY = 'geoshield_token';
