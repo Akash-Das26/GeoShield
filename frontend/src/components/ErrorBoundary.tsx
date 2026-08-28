@@ -1,5 +1,6 @@
 import { Component, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Shield } from 'lucide-react';
+import { t } from '../i18n/translations';
 
 interface Props {
   children: ReactNode;
@@ -42,9 +43,9 @@ export default class ErrorBoundary extends Component<Props, State> {
               <div className="w-16 h-16 rounded-2xl bg-red-600/20 flex items-center justify-center mx-auto mb-6">
                 <AlertTriangle className="w-8 h-8 text-red-400" />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">Something went wrong</h2>
+              <h2 className="text-xl font-bold text-white mb-2">{t('somethingWentWrong')}</h2>
               <p className="text-dark-400 text-sm mb-6">
-                A component crashed. This is usually a temporary issue.
+                {t('componentCrashed')}
               </p>
               {this.state.error && (
                 <div className="bg-dark-800 rounded-lg p-3 mb-6 text-left">
@@ -59,14 +60,14 @@ export default class ErrorBoundary extends Component<Props, State> {
                   className="px-4 py-2 rounded-lg bg-dark-800 border border-dark-600 text-dark-300 text-sm font-medium hover:text-white transition-all flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
-                  Try Again
+                  {t('tryAgain')}
                 </button>
                 <button
                   onClick={this.handleReload}
                   className="px-4 py-2 rounded-lg bg-green-600/20 border border-green-600/30 text-green-400 text-sm font-medium hover:bg-green-600/30 transition-all flex items-center gap-2"
                 >
                   <Shield className="w-4 h-4" />
-                  Reload Page
+                  {t('reloadPage')}
                 </button>
               </div>
               <p className="text-[10px] text-dark-500 mt-4">

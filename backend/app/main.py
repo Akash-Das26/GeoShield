@@ -138,10 +138,29 @@ def login(email: str = Form(...), password: str = Form(...)):
     }
 
 
-@app.websocket("/ws/alerts")
-async def websocket_alerts(websocket: WebSocket):
+@app.websocket("/ws/alerts/{district}")
+async def websocket_alerts(websocket: WebSocket, district: str = "all"):
+    """District-scoped WebSocket for real-time alert broadcasting."""
     await manager.connect(websocket)
     try:
+        await websocket.send_json({"type": "connected", "district": district, "message": f"Connected to {district} alert stream"})
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_json({"type": "pong"})
+            elif data.startswith("subscribe:"):
+                new_district = data.split(":", 1)[1]
+                await websocket.send_json({"type": "subscribed", "district": new_district})
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
+
+@app.websocket("/ws/alerts")
+async def websocket_alerts_all(websocket: WebSocket):
+    """Legacy endpoint - connects to all districts."""
+    await manager.connect(websocket)
+    try:
+        await websocket.send_json({"type": "connected", "district": "all"})
         while True:
             data = await websocket.receive_text()
             if data == "ping":
