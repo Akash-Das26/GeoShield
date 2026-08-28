@@ -462,7 +462,7 @@ GeoShield's AI model solves these problems by:
 
 ## ⚙️ Backend API
 
-### 21 RESTful Endpoints
+### 33+ RESTful Endpoints
 
 ```
   API ENDPOINT STATUS
@@ -733,7 +733,17 @@ GeoShield integrates **flood-landslide correlation** data for all 19 NER distric
 
 ## 🚀 Quick Start
 
-### One-Command Deploy
+### Download Pre-Built Apps
+
+| Platform | File | Size | How to Run |
+|----------|------|------|------------|
+| **Android** | `GeoShield-Android.apk` | 7.9 MB | Transfer to phone → Install |
+| **Linux AppImage** | `GeoShield-1.0.0.AppImage` | 108 MB | `chmod +x` then `./GeoShield-*.AppImage` |
+| **Linux DEB** | `geoshield_1.0.0_amd64.deb` | 104 MB | `sudo dpkg -i geoshield_*.deb` |
+| **Windows** | `GeoShield-1.0.0-Windows-x64.zip` | 165 MB | Extract → Run `GeoShield.exe` |
+| **Windows** | `start.bat` | 1 KB | Double-click to auto-setup & launch |
+
+### One-Command Deploy (Web)
 
 ```bash
 # Clone
@@ -768,7 +778,7 @@ docker build -t geoshield .
 docker run -p 8000:8000 geoshield
 ```
 
-**Demo Login:** Enter any email and password, or click the demo buttons (Admin, Field Officer, District Admin, Citizen).
+**Demo Login:** `admin@geoshield.gov.in` / `admin123` — or click any demo button on the login page.
 
 ---
 
@@ -778,13 +788,23 @@ docker run -p 8000:8000 geoshield
 GeoShield/
 ├── README.md                              # This file
 ├── SIH_2026_PRESENTATION.md               # 15-slide pitch deck
+├── PRESENTATION.md                        # Slide content with diagrams
 ├── DEPLOYMENT_GUIDE.md                    # Railway/Render/Docker
 ├── SATELLITE_INTEGRATION.md               # Real data integration
+├── BUILD_GUIDE.md                         # Desktop/mobile build instructions
 ├── Dockerfile                             # Docker deployment
 ├── Procfile                               # Railway deployment
-├── deploy.sh                              # One-click local deploy
+├── deploy.sh                              # One-click local deploy (Linux/Mac)
+├── start.bat                              # One-click local deploy (Windows)
+├── start.sh                               # Quick launcher script
+├── demo.sh                                # Polished demo script for judges
+├── electron/
+│   ├── main.js                            # Electron main process + backend auto-start
+│   └── preload.js                         # Secure IPC bridge
+├── android/                               # 📱 Capacitor Android wrapper
 ├── branding/
-│   └── team_logo.png                      # Team logo
+│   ├── team_logo.png                      # Team logo
+│   └── team_logo.ico                      # Windows icon
 │
 ├── backend/                               # ⚙️ Python FastAPI
 │   ├── app/
@@ -801,7 +821,17 @@ GeoShield/
 │   │       ├── reports.py                 # Reports + roads + villages
 │   │       ├── weather.py                 # Weather data
 │   │       ├── simulator.py               # Landslide simulator
-│   │       └── satellite.py               # Real satellite data
+│   │       ├── satellite.py               # Real satellite data
+│   │       ├── flood.py                   # Flood risk + correlation
+│   │       ├── alerts_timeline.py         # Timeline + history + trends
+│   │       ├── predict.py                 # Click-to-predict API
+│   │       └── export.py                  # GeoJSON/CSV export
+│   │   ├── schemas.py                     # Pydantic validation
+│   │   ├── middleware/
+│   │   │   └── rate_limiter.py            # Rate limiting (100/min)
+│   │   └── tests/
+│   │       ├── test_api.py                # 33 unit tests
+│   │       └── test_e2e.py                # 46 integration tests
 │   └── uploads/                           # Photo uploads
 │
 ├── frontend/                              # 🖥️ React + TypeScript
@@ -809,14 +839,19 @@ GeoShield/
 │   │   ├── App.tsx                        # Router + Auth + Sidebar
 │   │   ├── pages/
 │   │   │   ├── Dashboard.tsx              # 3 tabs, charts, rankings
-│   │   │   ├── RiskMap.tsx                # Leaflet GIS heatmap
-│   │   │   ├── Alerts.tsx                 # Alert management
+│   │   │   ├── RiskMap.tsx                # Leaflet GIS + click-to-predict
+│   │   │   ├── Alerts.tsx                 # Timeline + 30-day history
 │   │   │   ├── Reports.tsx                # Citizen reports
 │   │   │   ├── StationDetail.tsx          # Station + AI + satellite
 │   │   │   ├── Simulator.tsx              # Landslide simulator
-│   │   │   └── SatelliteData.tsx          # Real satellite metrics
-│   │   ├── services/api.ts                # API client (22 endpoints)
-│   │   └── i18n/translations.ts           # EN, HI, BN, AS
+│   │   │   ├── SatelliteData.tsx          # Real satellite metrics
+│   │   │   ├── FloodData.tsx              # 19 districts + correlation
+│   │   │   └── DemoFlow.tsx               # 8-step guide for judges
+│   │   ├── components/
+│   │   │   ├── ErrorBoundary.tsx           # Crash recovery UI
+│   │   │   └── MobileFAB.tsx              # Mobile floating action button
+│   │   ├── services/api.ts                # API client (33+ endpoints)
+│   │   └── i18n/translations.ts           # EN, HI, BN, AS, OR (5 languages)
 │   └── dist/                              # Built frontend
 │
 ├── datasets/                              # 📊 Data Sources
@@ -867,8 +902,8 @@ GeoShield/
 | **APIs** | Open-Meteo | Free | Real-time weather |
 | **Build** | Vite | 5.x | Frontend bundler |
 | **HTTP** | Axios | 1.x | API client |
-| **Mobile** | Capacitor | 6.x | Android wrapper |
-| **Desktop** | Electron | 33.x | Windows/Linux wrapper |
+| **Mobile** | Capacitor | 6.x + Status Bar | Android wrapper, futuristic splash |
+| **Desktop** | Electron | 44.x | Windows/Linux, auto-starts backend |
 | **Testing** | pytest + TestClient | — | 46 e2e tests |
 
 ---
@@ -960,38 +995,60 @@ GeoShield/
 | Detail | Value |
 |--------|-------|
 | **Package** | com.geoshield.app |
-| **Size** | 6.2 MB |
+| **Size** | 7.9 MB |
 | **Target** | Android 14 (API 34) |
 | **Min SDK** | API 22 (Android 5.1) |
-| **Features** | All 10 pages, 33+ APIs, login, simulator |
+| **Features** | All 10 pages, 33+ APIs, futuristic UI, StatusBar plugin |
+| **Splash Screen** | Custom animated shield with grid background |
+| **Status Bar** | Dark mode, neon green accent |
 
 ```bash
 # Build APK
-cd frontend && npx cap sync android
-cd android && ./gradlew assembleDebug
+cd frontend && npx cap sync android && cd android && ./gradlew assembleDebug
 # Output: android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-### Linux Desktop (AppImage)
+### Linux Desktop
 
-| Detail | Value |
-|--------|-------|
-| **Format** | AppImage (portable) |
-| **Size** | 126 MB |
-| **Features** | Custom menu, keyboard shortcuts, full-screen |
+| Format | Size | Details |
+|--------|------|---------|
+| **AppImage** | 108 MB | Portable, no install needed |
+| **DEB Package** | 104 MB | Ubuntu/Debian native install |
+| **Tar.gz** | 127 MB | Any Linux distro |
+
+| Feature | Details |
+|---------|---------|
+| **Auto-start Backend** | Python server launches with app |
+| **Loading Screen** | Animated splash with progress messages |
+| **Menu Bar** | Navigate (Cmd+1-7), View (Zoom, Fullscreen F11), Help |
+| **SPA Routing** | HashRouter — all 10 pages work from file:// |
+| **Backend Included** | Python + models bundled in app |
 
 ```bash
-# Build AppImage
-npx electron-builder --linux AppImage
-# Output: dist-electron/GeoShield-1.0.0.AppImage
+# Run AppImage
+chmod +x dist-electron/GeoShield-1.0.0.AppImage
+./dist-electron/GeoShield-1.0.0.AppImage
+# OR install DEB
+sudo dpkg -i dist-electron/geoshield_1.0.0_amd64.deb
 ```
 
-### Windows (NSIS Installer)
+### Windows Desktop
+
+| Format | Size | Details |
+|--------|------|---------|
+| **Portable ZIP** | 165 MB | Extract + run GeoShield.exe |
+| **Unpacked Dir** | 408 MB | Full Electron + Python backend |
+
+| Feature | Details |
+|---------|---------|
+| **One-Click Start** | `start.bat` auto-installs deps, seeds DB, opens browser |
+| **Backend Bundled** | Python server included, auto-starts on port 8000 |
+| **Custom Menu** | Navigate, View, Help with keyboard shortcuts |
 
 ```bash
-# On Windows or with Wine:
-npx electron-builder --win nsis
-# Output: dist-electron/GeoShield-Setup-1.0.0.exe
+# Build on Windows (or with Wine for NSIS installer):
+cd geo-shield && npm install && npm run build:win
+# OR use the portable zip directly
 ```
 
 ---
@@ -1000,10 +1057,10 @@ npx electron-builder --win nsis
 
 | Phase | Timeline | Features |
 |-------|----------|----------|
-| **Phase 1** | Current | Dashboard, GIS Map, Alerts, Reports, Simulator, Satellite, Click-to-Predict, GeoJSON/CSV Export, Alert Timeline, Demo Flow |
-| **Phase 2** | +3 months | SMS/Push notifications, Mobile app (React Native) |
-| **Phase 3** | +6 months | Real IoT sensor integration, Sentinel-2 NDVI pipeline |
-| **Phase 4** | +12 months | Offline-first mobile, District admin portal, IMD API |
+| **Phase 1** | ✅ Done | Dashboard, GIS Map, Alerts, Reports, Simulator, Satellite, Flood, Click-to-Predict, GeoJSON/CSV Export, Alert Timeline, Demo Flow, Android App, Linux Desktop, Windows Desktop, 5 Languages, Futuristic UI, Rate Limiting |
+| **Phase 2** | +3 months | SMS/Push notifications, React Native iOS app, Real IoT sensor integration |
+| **Phase 3** | +6 months | Sentinel-2 NDVI pipeline, SRTM DEM integration, IMD API |
+| **Phase 4** | +12 months | Offline-first mobile, District admin portal, Multi-hazard support |
 
 ---
 

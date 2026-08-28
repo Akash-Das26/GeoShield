@@ -1,6 +1,16 @@
 import axios from 'axios';
 import { getCurrentLanguage } from '../i18n/translations';
 
+// Detect if running in Electron desktop app
+const isElectron = () => {
+  try {
+    return typeof window !== 'undefined' && (
+      (window as any).navigator?.userAgent?.includes('Electron') ||
+      typeof (window as any).require !== 'undefined'
+    );
+  } catch { return false; }
+};
+
 // Detect if running in mobile app (Capacitor)
 const isMobile = () => {
   try {
@@ -8,13 +18,16 @@ const isMobile = () => {
   } catch { return false; }
 };
 
-// For mobile: use configurable server URL (stored in localStorage)
+// For Electron/mobile: use localhost (backend runs locally)
 // For web: use relative URL (same origin)
 const getApiBase = () => {
+  if (isElectron()) {
+    const savedUrl = localStorage.getItem('geoshield_server_url');
+    return `${savedUrl || 'http://localhost:8000'}/api`;
+  }
   if (isMobile()) {
     const savedUrl = localStorage.getItem('geoshield_server_url');
     if (savedUrl) return `${savedUrl}/api`;
-    // Default to localhost for development
     return 'http://localhost:8000/api';
   }
   return '/api';

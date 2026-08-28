@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, createContext, useContext } from 'react';
 import { t, setLanguage, getCurrentLanguage, Language, languages } from './i18n/translations';
 import { loginAPI, setStoredToken, clearStoredToken, getStoredToken, getAlertStats } from './services/api';
@@ -10,12 +10,11 @@ import StationDetail from './pages/StationDetail';
 import Simulator from './pages/Simulator';
 import SatelliteData from './pages/SatelliteData';
 import DemoFlow from './pages/DemoFlow';
-import FloodData from './pages/FloodData';
-import {
-  LayoutDashboard, Map, AlertTriangle, FileText, Globe, Shield, Radio,
+import FloodData from './pages/FloodData';import { LayoutDashboard, Map, AlertTriangle, FileText, Globe, Shield, Radio,
   ChevronLeft, Clock, LogOut, User, Bell, Search, Activity, Mountain,
   Droplets, BarChart3, Settings, Home, TrendingUp, Building2, MapPin, Zap, Satellite, Rocket, Waves,
 } from 'lucide-react';
+import MobileFAB from './components/MobileFAB';
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -387,6 +386,9 @@ function MainLayout() {
           </Routes>
         </main>
       </div>
+
+      {/* Mobile Floating Action Button */}
+      <MobileFAB />
     </div>
   );
 }
