@@ -23,6 +23,7 @@ const RISK_COLORS: Record<string, string> = {
   low: '#22c55e',
   moderate: '#f59e0b',
   high: '#f97316',
+  very_high: '#ea580c',
   critical: '#ef4444',
 };
 

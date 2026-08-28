@@ -15,6 +15,7 @@ from app.models import (
     SensorStation, SensorReading, RiskAssessment, Alert, WeatherData
 )
 from app.ai_engine.risk_predictor import get_predictor
+from app.ai_engine.enhanced_predictor import get_enhanced_predictor
 from app.auth import require_role
 
 router = APIRouter(prefix="/api/simulate", tags=["simulate"])
@@ -94,6 +95,24 @@ def _run_simulation(db: Session, station_id: Optional[str], intensity: str,
     }
 
     result = predictor.predict_risk(sensor_data, station_data)
+
+    # Also run enhanced predictor with terrain enrichment
+    try:
+        enhanced = get_enhanced_predictor()
+        enhanced_result = enhanced.predict(
+            station.latitude, station.longitude,
+            {
+                "slope": station.slope_angle,
+                "elevation": station.elevation,
+                "rainfall_24hr": rainfall,
+                "soil_moisture": moisture / 100,
+                "ndvi": station.vegetation_cover / 100,
+            }
+        )
+        result["risk_score"] = enhanced_result["risk_score"]
+        result["risk_level"] = enhanced_result["risk_level"]
+    except Exception:
+        pass  # Fall back to original predictor
 
     # Force higher risk based on intensity
     if intensity == "critical":

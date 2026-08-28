@@ -17,6 +17,7 @@ import io
 from app.database import get_db
 from app.models import SensorStation, RiskAssessment, Village, RoadStatus
 from app.ai_engine.risk_predictor import get_predictor
+from app.ai_engine.enhanced_predictor import get_enhanced_predictor
 
 router = APIRouter(prefix="/api", tags=["predict"])
 
@@ -68,7 +69,20 @@ def predict_risk_at_location(req: PredictRequest, db: Session = Depends(get_db))
         "pore_water_pressure": 0,
     }
 
-    # Run ML prediction
+    # Run enhanced ML prediction with terrain enrichment
+    enhanced = get_enhanced_predictor()
+    enhanced_result = enhanced.predict(
+        req.latitude, req.longitude,
+        {
+            "slope": req.slope if req.slope else (nearest.slope_angle if nearest else None),
+            "elevation": req.elevation if req.elevation else (nearest.elevation if nearest else None),
+            "rainfall_24hr": req.rainfall_mm if req.rainfall_mm else None,
+            "soil_moisture": (req.soil_moisture / 100) if req.soil_moisture is not None else None,
+            "ndvi": (nearest.vegetation_cover / 100) if nearest else None,
+        }
+    )
+
+    # Also run original predictor for backward compatibility
     prediction = predictor.predict_risk(sensor_data, station_data)
 
     return {
@@ -81,8 +95,21 @@ def predict_risk_at_location(req: PredictRequest, db: Session = Depends(get_db))
             "name": nearest.name if nearest else None,
             "distance_km": round(min_dist * 111, 1) if nearest else None,
         },
-        "risk_assessment": prediction,
-        "model_info": prediction.get("model_info", {}),
+        "risk_assessment": {
+            **prediction,
+            "risk_score": enhanced_result["risk_score"],
+            "risk_level": enhanced_result["risk_level"],
+            "confidence": enhanced_result["confidence"],
+            "source": enhanced_result["source"],
+            "feature_importance": enhanced_result.get("feature_importance"),
+            "terrain_data": enhanced_result.get("terrain_data"),
+        },
+        "model_info": {
+            "type": f"{enhanced_result['source'].upper()} + RF+GB Ensemble",
+            "training_samples": "12,000+ real NER samples",
+            "features": 9,
+            "terrain_enriched": True,
+        },
         "timestamp": datetime.utcnow().isoformat(),
     }
 

@@ -158,3 +158,14 @@ site/
 pyrightconfig.json
 *.pkl
 geoshield.db
+
+# Build artifacts (too large for GitHub)
+GeoShield-Android.apk
+GeoShield-Linux.AppImage
+dist-electron/
+frontend/android/
+branding/team_logo.ico
+android/
+frontend/android/
+*.AppImage
+*.apk
