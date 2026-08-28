@@ -429,6 +429,7 @@ GeoShield's AI model solves these problems by:
 | **⚡ Simulator** | Live demo tool | 4 intensity levels, AI assessment, alert generation |
 | **🛰️ Satellite** | Real data view | 20 stations, live metrics, risk scoring |
 | **📡 Station** | Deep dive | Sensor charts, AI gauge, weather, satellite data |
+| **🎯 Demo Flow** | Judge walkthrough | 8-step guide, live simulation, key metrics |
 
 ### Dashboard Overview Tab
 
@@ -460,7 +461,7 @@ GeoShield's AI model solves these problems by:
 
 ## ⚙️ Backend API
 
-### 17 RESTful Endpoints
+### 21 RESTful Endpoints
 
 ```
   API ENDPOINT STATUS
@@ -489,6 +490,23 @@ GeoShield's AI model solves these problems by:
   ✅ POST /api/reports                  → Submit new report
   ✅ GET  /api/roads                    → 8 monitored roads
   ✅ GET  /api/villages                 → 18 tracked villages
+
+  PREDICT (Click-to-Predict)
+  ✅ POST /api/predict                  → AI risk at any lat/lng
+
+  EXPORT
+  ✅ GET  /api/export/geojson           → GIS-ready GeoJSON
+  ✅ GET  /api/export/csv               → Excel/analysis CSV
+  ✅ GET  /api/export/risk-zones        → High-risk polygons
+
+  ALERT TIMELINE
+  ✅ GET  /api/alerts/timeline          → Chronological view
+  ✅ GET  /api/alerts/history           → 30-day trend data
+  ✅ GET  /api/alerts/stats             → Alert summary stats
+
+  WEATHER
+  ✅ GET  /api/weather/{id}             → Live weather data
+  ✅ GET  /api/weather/{id}/forecast    → 48h forecast
 
   SATELLITE
   ✅ GET  /api/satellite/data           → 20 stations real data
@@ -821,7 +839,7 @@ GeoShield/
   ║                                                              ║
   ║  🤖 AI Model            79.4% accuracy (12,000 samples)     ║
   ║  📡 Sensor Stations     20 across 8 NER states              ║
-  ║  📊 API Endpoints       22 fully functional                 ║
+  ║  📊 API Endpoints       21 fully functional                 ║
   ║  🗺️  GIS Features        Heatmap + Roads + Villages         ║
   ║  🛰️  Satellite Data      Real Open-Meteo integration       ║
   ║  📜 Historical Events   44 events (2011-2024)               ║

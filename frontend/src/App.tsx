@@ -9,10 +9,11 @@ import Reports from './pages/Reports';
 import StationDetail from './pages/StationDetail';
 import Simulator from './pages/Simulator';
 import SatelliteData from './pages/SatelliteData';
+import DemoFlow from './pages/DemoFlow';
 import {
   LayoutDashboard, Map, AlertTriangle, FileText, Globe, Shield, Radio,
   ChevronLeft, Clock, LogOut, User, Bell, Search, Activity, Mountain,
-  Droplets, BarChart3, Settings, Home, TrendingUp, Building2, MapPin, Zap, Satellite,
+  Droplets, BarChart3, Settings, Home, TrendingUp, Building2, MapPin, Zap, Satellite, Rocket,
 } from 'lucide-react';
 
 interface AuthContextType {
@@ -179,6 +180,7 @@ function MainLayout() {
     { to: '/reports', icon: FileText, label: t('reports'), badge: null },
     { to: '/simulator', icon: Zap, label: t('simulateLandslide'), badge: null },
     { to: '/satellite', icon: Satellite, label: t('satellite'), badge: null },
+    { to: '/demo', icon: Rocket, label: 'Demo Flow', badge: null },
   ];
 
   return (
@@ -378,6 +380,7 @@ function MainLayout() {
             <Route path="/station/:stationId" element={<StationDetail />} />
             <Route path="/simulator" element={<Simulator />} />
             <Route path="/satellite" element={<SatelliteData />} />
+            <Route path="/demo" element={<DemoFlow />} />
           </Routes>
         </main>
       </div>
