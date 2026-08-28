@@ -713,8 +713,9 @@ GeoShield integrates **flood-landslide correlation** data for all 19 NER distric
 
 | Endpoint | Description |
 |----------|-------------|
-|  | District-level flood risk data |
-|  | Aggregated NER flood metrics |
+| `GET /api/flood/data` | District-level flood risk data |
+| `GET /api/flood/summary` | Aggregated NER flood metrics |
+| `GET /api/flood/correlation` | Flood × landslide compound risk scatter |
 |  | Flood × landslide compound risk scatter |
 
 ---
@@ -866,6 +867,9 @@ GeoShield/
 | **APIs** | Open-Meteo | Free | Real-time weather |
 | **Build** | Vite | 5.x | Frontend bundler |
 | **HTTP** | Axios | 1.x | API client |
+| **Mobile** | Capacitor | 6.x | Android wrapper |
+| **Desktop** | Electron | 33.x | Windows/Linux wrapper |
+| **Testing** | pytest + TestClient | — | 46 e2e tests |
 
 ---
 
@@ -912,7 +916,83 @@ GeoShield/
 
 ### End-to-End Integration Test: 46/46 PASSED
 
+```
+═══ 14 SECTIONS, 46 CHECKS ═══
 
+  Core Backend:         3/3   (health, login, frontend)
+  Dashboard Data:       5/5   (stats, heatmap, trends, states)
+  Sensor Stations:      3/3   (list, detail, history)
+  Alerts System:        4/4   (list, stats, timeline, history)
+  Simulator→Alert:      3/3   (simulate → alert created → count grew)
+  AI Prediction:        2/2   (predict with factors, level consistent)
+  Flood Data:           3/3   (data, summary, correlation)
+  Satellite Data:       3/3   (20 stations, summary, risk zones)
+  Weather Data:         2/2   (live data, forecast)
+  Data Export:          3/3   (GeoJSON, CSV, risk zones)
+  Infrastructure:       3/3   (48 roads, 18 villages, 15 reports)
+  Frontend Routes:      8/8   (all 8 SPA routes)
+  Alert Workflow:       1/1   (acknowledge alert)
+  Security:             3/3   (invalid login, no auth, bad input)
+
+  ════════════════════════════════
+  FINAL: 46/46 PASSED, 0 FAILED
+  ════════════════════════════════
+```
+
+### Key Test Results
+
+| Feature | What Was Tested | Result |
+|---------|----------------|--------|
+| **Dashboard** | 20 stations, 32 alerts, risk=43.9 | ✅ Real data |
+| **Simulate** | Cherrapunji → risk=99.2/critical | ✅ Alert fires |
+| **Alert Flow** | Count grew 101→102 after sim | ✅ Flow works |
+| **AI Predict** | risk=89.4/critical, 2 factors | ✅ Nearest station found |
+| **Flood Correlation** | 19 districts correlated | ✅ Scatter plot |
+| **Export** | GeoJSON (20 features), CSV (21 lines) | ✅ Downloads work |
+| **Security** | Invalid login→401, no auth→401, bad input→422 | ✅ All blocked |
+
+---
+
+## 📱 Mobile & Desktop Apps
+
+### Android APK
+
+| Detail | Value |
+|--------|-------|
+| **Package** | com.geoshield.app |
+| **Size** | 6.2 MB |
+| **Target** | Android 14 (API 34) |
+| **Min SDK** | API 22 (Android 5.1) |
+| **Features** | All 10 pages, 33+ APIs, login, simulator |
+
+```bash
+# Build APK
+cd frontend && npx cap sync android
+cd android && ./gradlew assembleDebug
+# Output: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Linux Desktop (AppImage)
+
+| Detail | Value |
+|--------|-------|
+| **Format** | AppImage (portable) |
+| **Size** | 126 MB |
+| **Features** | Custom menu, keyboard shortcuts, full-screen |
+
+```bash
+# Build AppImage
+npx electron-builder --linux AppImage
+# Output: dist-electron/GeoShield-1.0.0.AppImage
+```
+
+### Windows (NSIS Installer)
+
+```bash
+# On Windows or with Wine:
+npx electron-builder --win nsis
+# Output: dist-electron/GeoShield-Setup-1.0.0.exe
+```
 
 ---
 
