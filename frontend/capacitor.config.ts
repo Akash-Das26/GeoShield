@@ -5,20 +5,35 @@ const config: CapacitorConfig = {
   appName: 'GeoShield',
   webDir: 'dist',
   server: {
-    // Allow navigation to external URLs (for maps, etc.)
     allowNavigation: ['*'],
-    // For development, you can set the backend URL:
-    // url: 'http://192.168.1.100:8000',
-    // cleartext: true,
   },
   android: {
     allowMixedContent: true,
+    backgroundColor: '#0a0f1a',
+    buildOptions: {
+      keystorePath: undefined,
+      keystoreAlias: undefined,
+    },
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 2000,
+      launchShowDuration: 2500,
+      launchAutoHide: true,
       backgroundColor: '#0a0f1a',
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: false,
       androidSplashResourceName: 'splash',
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
+    StatusBar: {
+      style: 'DARK',
+      backgroundColor: '#0a0f1a',
+      overlaysWebView: true,
+    },
+    Keyboard: {
+      resize: 'body',
+      resizeOnFullScreen: true,
     },
   },
 };
