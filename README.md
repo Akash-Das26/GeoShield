@@ -146,7 +146,7 @@ GeoShield is a **full-stack AI-powered landslide monitoring system** designed sp
 | # | Capability | Description | Technology |
 |---|------------|-------------|------------|
 | 1 | **Real-Time Monitoring** | 20 IoT sensor stations across 8 NER states collecting rainfall, soil moisture, ground displacement, tilt, and pore pressure data | FastAPI + SQLite |
-| 2 | **AI Risk Prediction** | Machine learning ensemble (Random Forest + Gradient Boosting) trained on 12,000 real NER terrain samples with 78.2% accuracy | scikit-learn |
+| 2 | **AI Risk Prediction** | XGBoost model (95.8% accuracy) + RF+GB ensemble trained on 12,000 real NER terrain samples with terrain enrichment | scikit-learn, xgboost |
 | 3 | **Early Warning System** | Multi-level alert framework (Low → Moderate → High → Critical) with automatic SMS/push notification support | WebSocket + REST |
 | 4 | **GIS Risk Mapping** | Interactive Leaflet.js heatmaps showing real-time risk distribution, road status, village locations, and sensor stations | Leaflet.js |
 | 5 | **Citizen Reporting** | Geo-tagged photo/video reporting system for field officers and local residents with offline queue support | React + FastAPI |
@@ -206,7 +206,7 @@ GeoShield is a **full-stack AI-powered landslide monitoring system** designed sp
 │  │          VotingClassifier (soft, weights=[0.4, 0.6])     │   │
 │  │                                                          │   │
 │  │  Training: 12,000 NER samples | 9 features              │   │
-│  │  Accuracy: 78.2% test | 99.9% train                     │   │
+│  │  Accuracy: 95.8% test | 95.7% CV                        │   │
 │  │                                                          │   │
 │  └──────────────────────────────────────────────────────────┘   │
 ├─────────────────────────────────────────────────────────────────┤
@@ -338,7 +338,8 @@ GeoShield's AI model solves these problems by:
   ═══════════════════════════════════════════════════════
 
   Training Accuracy: ████████████████████████████████████████  99.9%
-  Test Accuracy:     ████████████████████████████████████      78.2%
+  XGBoost Accuracy:  ████████████████████████████████████████  95.8%
+  Cross-Validation:  ████████████████████████████████████████  95.7%
 
   Cross-validation:  ██████████████████████████████████        ~78%
 
@@ -462,7 +463,7 @@ GeoShield's AI model solves these problems by:
 
 ## ⚙️ Backend API
 
-### 33+ RESTful Endpoints
+### 45 RESTful Endpoints
 
 ```
   API ENDPOINT STATUS
@@ -524,7 +525,7 @@ GeoShield's AI model solves these problems by:
   AUTH
   ✅ POST /api/auth/login                  → JWT token
 
-  TOTAL: 33+ ENDPOINTS | ALL RETURNING 200 ✅
+  TOTAL: 45 ENDPOINTS | ALL RETURNING 200 ✅
 ```
 
 ---
@@ -856,7 +857,7 @@ GeoShield/
 │   │   ├── components/
 │   │   │   ├── ErrorBoundary.tsx           # Crash recovery UI
 │   │   │   └── MobileFAB.tsx              # Mobile floating action button
-│   │   ├── services/api.ts                # API client (33+ endpoints)
+│   │   ├── services/api.ts                # API client (45 endpoints)
 │   │   └── i18n/translations.ts           # EN, HI, BN, AS, OR (5 languages)
 │   └── dist/                              # Built frontend
 │
@@ -923,9 +924,9 @@ GeoShield/
   ║              GeoShield Performance Dashboard                 ║
   ╠══════════════════════════════════════════════════════════════╣
   ║                                                              ║
-  ║  🤖 AI Model            78.2% accuracy (12,000 samples)     ║
+  ║  🤖 AI Model            95.8% accuracy (12,000 samples)     ║
   ║  📡 Sensor Stations     20 across 8 NER states              ║
-  ║  📊 API Endpoints       33+ fully functional                 ║
+  ║  📊 API Endpoints       45 fully functional                  ║
   ║  🗺️  GIS Features        Heatmap + Roads + Villages         ║
   ║  🛰️  Satellite Data      Real Open-Meteo integration       ║
   ║  📜 Historical Events   44 events (2011-2024)               ║
@@ -955,7 +956,7 @@ GeoShield/
 
 ## ✅ Test Results
 
-### End-to-End Integration Test: 46/46 PASSED
+### End-to-End Integration Test: 48/48 PASSED
 
 ```
 ═══ 14 SECTIONS, 46 CHECKS ═══
@@ -976,7 +977,7 @@ GeoShield/
   Security:             3/3   (invalid login, no auth, bad input)
 
   ════════════════════════════════
-  FINAL: 46/46 PASSED, 0 FAILED
+  FINAL: 48/48 PASSED, 0 FAILED
   ════════════════════════════════
 ```
 
@@ -1004,7 +1005,7 @@ GeoShield/
 | **Size** | 7.9 MB |
 | **Target** | Android 14 (API 34) |
 | **Min SDK** | API 22 (Android 5.1) |
-| **Features** | All 10 pages, 33+ APIs, futuristic UI, StatusBar plugin |
+| **Features** | All 10 pages, 45 APIs, XGBoost + terrain lookup, futuristic UI |
 | **Splash Screen** | Custom animated shield with grid background |
 | **Status Bar** | Dark mode, neon green accent |
 
