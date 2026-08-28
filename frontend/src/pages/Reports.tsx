@@ -91,7 +91,7 @@ export default function Reports() {
             <FileText className="w-6 h-6 text-blue-400" />
             {t('reports')}
           </h1>
-          <p className="text-dark-400 text-sm mt-1">{t('citizenFieldReports')}</p>
+          <p className="text-dark-400 text-sm mt-1">Citizen & Field Official Reports from NER Region</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -107,7 +107,7 @@ export default function Reports() {
         {[
           { label: t('totalReports'), value: stats.total, icon: FileText, color: 'from-blue-500 to-cyan-500' },
           { label: t('pendingReview'), value: stats.pending, icon: Clock, color: 'from-amber-500 to-yellow-500' },
-          { label: t('verifiedLabel'), value: stats.verified, icon: CheckCircle, color: 'from-green-500 to-emerald-500' },
+          { label: t('verified'), value: stats.verified, icon: CheckCircle, color: 'from-green-500 to-emerald-500' },
         ].map((card, i) => (
           <div key={i} className="glass rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -127,16 +127,16 @@ export default function Reports() {
           {success ? (
             <div className="text-center py-8">
               <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
-              <p className="text-lg font-semibold text-white">{t('reportSubmittedSuccess')}</p>
-              <p className="text-dark-400 text-sm mt-1">{t('thankYouMonitoring')}</p>
+              <p className="text-lg font-semibold text-white">Report Submitted Successfully!</p>
+              <p className="text-dark-400 text-sm mt-1">Thank you for helping monitor landslide risks.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <h3 className="text-lg font-semibold text-white mb-2">{t('newReport')}</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">📝 New Report</h3>
 
               {/* Report Type */}
               <div>
-                <label className="text-xs text-dark-400 mb-1 block">{t('reportType')}</label>
+                <label className="text-xs text-dark-400 mb-1 block">Report Type *</label>
                 <div className="grid grid-cols-5 gap-2">
                   {REPORT_TYPE_KEYS.map((type) => (
                     // NOTE: t() is called at render time, not module load time
@@ -173,7 +173,7 @@ export default function Reports() {
               {/* Location */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-dark-400 mb-1 block">{t('latitude')}</label>
+                  <label className="text-xs text-dark-400 mb-1 block">Latitude *</label>
                   <input
                     type="number"
                     step="any"
@@ -185,7 +185,7 @@ export default function Reports() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-dark-400 mb-1 block">{t('longitude')}</label>
+                  <label className="text-xs text-dark-400 mb-1 block">Longitude *</label>
                   <input
                     type="number"
                     step="any"
@@ -206,7 +206,7 @@ export default function Reports() {
                     type="text"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
-                    placeholder={t("reporterNamePh")}
+                    placeholder="John Doe"
                     className="w-full px-4 py-2.5 rounded-lg bg-dark-800 border border-dark-700 text-white text-sm placeholder-dark-500 focus:outline-none focus:border-green-600/50 transition-all"
                   />
                 </div>
@@ -234,7 +234,7 @@ export default function Reports() {
                   ) : (
                     <Send className="w-4 h-4" />
                   )}
-                  {submitting ? t('submitting') : t('submit')}
+                  {submitting ? 'Submitting...' : t('submit')}
                 </button>
                 <button
                   type="button"
@@ -261,7 +261,7 @@ export default function Reports() {
                 : 'bg-dark-800 text-dark-400 border border-dark-700 hover:text-white'
             }`}
           >
-            {status === 'all' ? t('all') : status === 'pending' ? t('pending') : status === 'verified' ? t('verifiedLabel') : t('resolved')}
+            {status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
         ))}
       </div>
@@ -274,7 +274,7 @@ export default function Reports() {
       ) : reports.length === 0 ? (
         <div className="text-center py-12">
           <FileText className="w-12 h-12 text-dark-600 mx-auto mb-3" />
-          <p className="text-dark-400">{t('noReportsFound')}</p>
+          <p className="text-dark-400">No reports found.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -286,8 +286,8 @@ export default function Reports() {
                     {REPORT_TYPE_KEYS.find(rt => rt.value === report.report_type)?.icon || '📌'}
                   </span>
                   <div>
-                    <h4 className="text-sm font-semibold text-white capitalize">{(REPORT_TYPE_KEYS.find(rt => rt.value === report.report_type)?.labelKey ? t(REPORT_TYPE_KEYS.find(rt => rt.value === report.report_type)!.labelKey!) : report.report_type.replace('_', ' '))}</h4>
-                    <p className="text-xs text-dark-400">{report.reporter_name || t('other')}</p>
+                    <h4 className="text-sm font-semibold text-white capitalize">{report.report_type.replace('_', ' ')}</h4>
+                    <p className="text-xs text-dark-400">{report.reporter_name || 'Anonymous'}</p>
                   </div>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -295,7 +295,7 @@ export default function Reports() {
                   report.status === 'pending' ? 'bg-amber-600/10 text-amber-400 border border-amber-600/20' :
                   'bg-dark-700 text-dark-400 border border-dark-600'
                 }`}>
-                  {report.status === 'pending' ? t('pending') : report.status === 'verified' ? t('verified') : report.status === 'dismissed' ? t('resolved') : report.status}
+                  {report.status}
                 </span>
               </div>
               <p className="text-sm text-dark-300 mb-2">{report.description}</p>

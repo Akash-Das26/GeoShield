@@ -54,19 +54,19 @@ export default function FloodData() {
       <div>
         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
           <Droplets className="w-6 h-6 text-blue-400" />
-          Flood Risk Monitoring
+          {t('floodRiskMonitoring')}
         </h1>
-        <p className="text-dark-400 text-sm mt-1">NER flood-landslide compound hazard analysis — Asia Flood Atlas + IMD data</p>
+        <p className="text-dark-400 text-sm mt-1">{t('floodLandslideCompoundAnalysis')}</p>
       </div>
 
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Districts Monitored', value: summary.total_districts, icon: MapPin, color: 'from-blue-500 to-cyan-500' },
-            { label: 'Avg Flood Risk', value: `${summary.avg_risk_score}/100`, icon: Droplets, color: 'from-cyan-500 to-teal-500' },
-            { label: 'Total Historical Events', value: summary.total_historical_events, icon: AlertTriangle, color: 'from-orange-500 to-red-500' },
-            { label: 'High Risk Districts', value: summary.high_risk_districts, icon: Waves, color: 'from-red-500 to-pink-500' },
+            { label: t('districtsMonitored'), value: summary.total_districts, icon: MapPin, color: 'from-blue-500 to-cyan-500' },
+            { label: t('avgFloodRisk'), value: `${summary.avg_risk_score}/100`, icon: Droplets, color: 'from-cyan-500 to-teal-500' },
+            { label: t('totalHistoricalEvents'), value: summary.total_historical_events, icon: AlertTriangle, color: 'from-orange-500 to-red-500' },
+            { label: t('highRiskDistricts'), value: summary.high_risk_districts, icon: Waves, color: 'from-red-500 to-pink-500' },
           ].map((card, i) => (
             <div key={i} className="glass rounded-xl p-4 border border-dark-700">
               <div className="flex items-center gap-3">
@@ -87,7 +87,7 @@ export default function FloodData() {
       <div className="glass rounded-xl p-5 border border-dark-700">
         <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
           <Droplets className="w-4 h-4 text-blue-400" />
-          Flood Risk by District
+          {t('floodRiskByDistrict')}
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={data.slice(0, 10)}>
@@ -109,7 +109,7 @@ export default function FloodData() {
         <div className="glass rounded-xl p-5 border border-dark-700">
           <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
             <Activity className="w-4 h-4 text-orange-400" />
-            Flood vs Landslide Compound Risk
+            {t('floodVsLandslideCompoundRisk')}
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <ScatterChart>
@@ -129,7 +129,7 @@ export default function FloodData() {
             </ScatterChart>
           </ResponsiveContainer>
           <p className="text-xs text-dark-400 mt-2">
-            Compound Risk = 0.4 × Flood Risk + 0.6 × Landslide Risk | Bubble color indicates compound risk level
+            {t('compoundRiskFormula')}
           </p>
         </div>
       )}
@@ -138,17 +138,17 @@ export default function FloodData() {
       <div className="glass rounded-xl p-5 border border-dark-700">
         <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
           <MapPin className="w-4 h-4 text-cyan-400" />
-          Flood Risk District Details
+          {t('floodRiskDistrictDetails')}
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-dark-400 border-b border-dark-700">
-                <th className="text-left py-2 px-3 font-medium">District</th>
-                <th className="text-left py-2 px-3 font-medium">Flood Risk</th>
-                <th className="text-left py-2 px-3 font-medium">Annual Flood Days</th>
-                <th className="text-left py-2 px-3 font-medium">Historical Events</th>
-                <th className="text-left py-2 px-3 font-medium">River Systems</th>
+                <th className="text-left py-2 px-3 font-medium">{t('districtsMonitored')}</th>
+                <th className="text-left py-2 px-3 font-medium">{t('floodRisk')}</th>
+                <th className="text-left py-2 px-3 font-medium">{t('annualFloodDays')}</th>
+                <th className="text-left py-2 px-3 font-medium">{t('historicalEventsLabel')}</th>
+                <th className="text-left py-2 px-3 font-medium">{t('riverSystems')}</th>
               </tr>
             </thead>
             <tbody>

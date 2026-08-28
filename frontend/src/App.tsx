@@ -1,4 +1,4 @@
-import { HashRouter as Router, Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, createContext, useContext } from 'react';
 import { t, setLanguage, getCurrentLanguage, Language, languages } from './i18n/translations';
 import { loginAPI, setStoredToken, clearStoredToken, getStoredToken, getAlertStats } from './services/api';
@@ -10,11 +10,14 @@ import StationDetail from './pages/StationDetail';
 import Simulator from './pages/Simulator';
 import SatelliteData from './pages/SatelliteData';
 import DemoFlow from './pages/DemoFlow';
-import FloodData from './pages/FloodData';import { LayoutDashboard, Map, AlertTriangle, FileText, Globe, Shield, Radio,
+import FloodData from './pages/FloodData';
+import ErrorBoundary from './components/ErrorBoundary';
+import MobileFAB from './components/MobileFAB';
+import {
+  LayoutDashboard, Map, AlertTriangle, FileText, Globe, Shield, Radio,
   ChevronLeft, Clock, LogOut, User, Bell, Search, Activity, Mountain,
   Droplets, BarChart3, Settings, Home, TrendingUp, Building2, MapPin, Zap, Satellite, Rocket, Waves,
 } from 'lucide-react';
-import MobileFAB from './components/MobileFAB';
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -45,7 +48,7 @@ function LoginPage() {
     setLoading(true);
     setError('');
     if (!email || !password) {
-      setError(t('loginError'));
+      setError(t('enterCredentials'));
       setLoading(false);
       return;
     }
@@ -73,12 +76,12 @@ function LoginPage() {
               <Shield className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-white">GeoShield</h1>
-            <p className="text-dark-400 text-sm mt-1">{t('tagline')}</p>
-            <p className="text-dark-500 text-xs mt-0.5">{t('region')}</p>
+            <p className="text-dark-400 text-sm mt-1">AI-Based Landslide Risk Monitoring</p>
+            <p className="text-dark-500 text-xs mt-0.5">North Eastern Region, India</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="text-xs text-dark-400 mb-1 block">{t('email')}</label>
+              <label className="text-xs text-dark-400 mb-1 block">{t('emailLabel')}</label>
               <input
                 type="email"
                 value={email}
@@ -88,12 +91,12 @@ function LoginPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-dark-400 mb-1 block">{t('password')}</label>
+              <label className="text-xs text-dark-400 mb-1 block">{t('passwordLabel')}</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={t("enterPassword")}
+                placeholder={t('enterPasswordPlaceholder')}
                 className="w-full px-4 py-3 rounded-xl bg-dark-800 border border-dark-700 text-white text-sm placeholder-dark-500 focus:outline-none focus:border-green-600/50 focus:ring-1 focus:ring-green-600/30 transition-all"
               />
             </div>
@@ -110,14 +113,14 @@ function LoginPage() {
               ) : (
                 <>
                   <Shield className="w-4 h-4" />
-                  Sign In to GeoShield
+                  {t('signInToGeoShield')}
                 </>
               )}
             </button>
           </form>
           <div className="mt-6 pt-4 border-t border-dark-700">
             <p className="text-[10px] text-dark-500 text-center">
-              Demo: Click a button below to auto-fill credentials
+              {t('demoLoginHint')}
             </p>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
@@ -180,8 +183,8 @@ function MainLayout() {
     { to: '/reports', icon: FileText, label: t('reports'), badge: null },
     { to: '/simulator', icon: Zap, label: t('simulateLandslide'), badge: null },
     { to: '/satellite', icon: Satellite, label: t('satellite'), badge: null },
-    { to: '/flood', icon: Waves, label: 'Flood Risk', badge: null },
-    { to: '/demo', icon: Rocket, label: 'Demo Flow', badge: null },
+    { to: '/flood', icon: Waves, label: t('floodRisk'), badge: null },
+    { to: '/demo', icon: Rocket, label: t('demoFlow'), badge: null },
   ];
 
   return (
@@ -199,7 +202,7 @@ function MainLayout() {
             {sidebarOpen && (
               <div className="min-w-0">
                 <h1 className="text-lg font-bold text-white truncate">GeoShield</h1>
-                <p className="text-[10px] text-dark-400 truncate">{t('nerLandsideMonitor')}</p>
+                <p className="text-[10px] text-dark-400 truncate">{t('nerLandslideMonitor')}</p>
               </div>
             )}
           </div>
@@ -282,7 +285,7 @@ function MainLayout() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-dark-400">
                 <Globe className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-medium tracking-wider">{t('languageLabel')}</span>
+                <span className="text-[10px] font-medium tracking-wider">{t('settings').toUpperCase()}</span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 {(Object.entries(languages) as [Language, { name: string; flag: string }][]).map(
@@ -348,9 +351,9 @@ function MainLayout() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-600/10 border border-green-600/20">
               <Radio className="w-3 h-3 text-green-400" />
-              <span className="text-[10px] text-green-400 font-semibold">{t('live')}</span>
+              <span className="text-[10px] text-green-400 font-semibold">LIVE</span>
             </div>
-            <span className="text-xs text-dark-400 hidden md:inline">{t('nerRegionInfo')}</span>
+            <span className="text-xs text-dark-400 hidden md:inline">NER Region • 8 States • 20 Stations</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-dark-400">
@@ -373,7 +376,8 @@ function MainLayout() {
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto bg-dark-950">
-          <Routes>
+          {/* key={lang} forces remount when language changes, so t() calls re-evaluate */}
+          <Routes key={lang}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/map" element={<RiskMap />} />
             <Route path="/alerts" element={<Alerts />} />
@@ -386,7 +390,6 @@ function MainLayout() {
           </Routes>
         </main>
       </div>
-
       {/* Mobile Floating Action Button */}
       <MobileFAB />
     </div>
@@ -427,11 +430,13 @@ function App() {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
-      <Router>
-        {isLoggedIn ? <MainLayout /> : <LoginPage />}
-      </Router>
-    </AuthContext.Provider>
+    <ErrorBoundary>
+      <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
+        <Router>
+          {isLoggedIn ? <MainLayout /> : <LoginPage />}
+        </Router>
+      </AuthContext.Provider>
+    </ErrorBoundary>
   );
 }
 

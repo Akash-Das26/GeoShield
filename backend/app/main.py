@@ -3,6 +3,7 @@ GeoShield - AI-Based Early Warning and Landslide Risk Monitoring System
 Backend API Server for Smart India Hackathon 2026
 """
 import os
+import sys
 from datetime import datetime
 from typing import List
 
@@ -13,8 +14,7 @@ from starlette.responses import FileResponse
 from app.middleware.rate_limiter import RateLimiter
 
 from app.database import engine, Base, SessionLocal
-from app.routers import sensors, dashboard, alerts, reports, weather, simulator, satellite
-from app.routers import predict, alerts_timeline, flood
+from app.routers import sensors, dashboard, alerts, reports, weather, simulator, satellite, predict, alerts_timeline, flood
 from app.auth import authenticate_user, create_token
 
 
@@ -50,16 +50,29 @@ manager = ConnectionManager()
 
 
 def init_database():
-    # Production (PostgreSQL/external DB): use Alembic migrations
-    # Dev (SQLite): create_all is faster and auto-syncs with models
-    if os.getenv("DATABASE_URL"):
-        from alembic.config import Config
-        from alembic import command
-        alembic_cfg = Config(os.path.join(os.path.dirname(__file__), "..", "alembic.ini"))
-        command.upgrade(alembic_cfg, "head")
-        print("[GeoShield] ✅ Database migrated via Alembic")
+    # Use Alembic for production (PostgreSQL), create_all for local dev (SQLite)
+    database_url = os.getenv("DATABASE_URL", "")
+    if database_url and not database_url.startswith("sqlite"):
+        # Production: run Alembic migrations
+        try:
+            import subprocess
+            alembic_ini = os.path.join(os.path.dirname(__file__), "..", "alembic.ini")
+            result = subprocess.run(
+                [sys.executable, "-m", "alembic", "upgrade", "head"],
+                cwd=os.path.dirname(os.path.dirname(__file__)),
+                capture_output=True, text=True, timeout=30
+            )
+            if result.returncode != 0:
+                print(f"[GeoShield] ⚠️  Alembic error: {result.stderr}")
+            else:
+                print("[GeoShield] ✅ Alembic migrations applied")
+        except Exception as e:
+            print(f"[GeoShield] ⚠️  Alembic failed: {e}, falling back to create_all")
+            Base.metadata.create_all(bind=engine)
     else:
+        # Development: create_all for instant setup
         Base.metadata.create_all(bind=engine)
+
     db = SessionLocal()
     try:
         from app.models import SensorStation
@@ -86,13 +99,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Rate limiting: 100 req/min general, 10 req/min for auth
-app.add_middleware(RateLimiter, general_limit=100, auth_limit=10, window_seconds=60)
+app.add_middleware(RateLimiter)
 
 app.include_router(sensors.router)
 app.include_router(dashboard.router)
@@ -132,14 +143,12 @@ async def websocket_alerts(websocket: WebSocket, district: str = "all"):
     """District-scoped WebSocket for real-time alert broadcasting."""
     await manager.connect(websocket)
     try:
-        # Send connection confirmation with district scope
         await websocket.send_json({"type": "connected", "district": district, "message": f"Connected to {district} alert stream"})
         while True:
             data = await websocket.receive_text()
             if data == "ping":
                 await websocket.send_json({"type": "pong"})
             elif data.startswith("subscribe:"):
-                # Allow changing district subscription
                 new_district = data.split(":", 1)[1]
                 await websocket.send_json({"type": "subscribed", "district": new_district})
     except WebSocketDisconnect:
