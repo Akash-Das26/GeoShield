@@ -306,4 +306,36 @@ export const getStationSatelliteData = (id: string) => api.get<SatelliteStation>
 export const getSatelliteSummary = () => api.get<SatelliteSummary>('/satellite/summary');
 export const getSatelliteRiskZones = () => api.get<SatelliteRiskZone[]>('/satellite/risk-zones');
 
+// --- Flood Data ---
+export interface FloodDistrict {
+  district: string;
+  annual_flood_days: number;
+  historical_events: number;
+  flood_risk_score: number;
+  river_systems: string[];
+}
+export interface FloodSummary {
+  total_districts: number;
+  avg_risk_score: number;
+  max_risk_district: string;
+  max_risk_score: number;
+  total_historical_events: number;
+  avg_annual_flood_days: number;
+  high_risk_districts: number;
+  data_source: string;
+}
+export interface FloodLandslideCorrelation {
+  district: string;
+  flood_risk: number;
+  landslide_risk: number;
+  compound_risk: number;
+  river_systems: string[];
+  has_landslide_data: boolean;
+}
+export const getFloodData = (minRisk?: number) =>
+  api.get<{ data: FloodDistrict[]; total_districts: number }>('/flood/data', { params: minRisk ? { min_risk: minRisk } : {} });
+export const getFloodSummary = () => api.get<FloodSummary>('/flood/summary');
+export const getFloodCorrelation = () =>
+  api.get<{ correlation: FloodLandslideCorrelation[]; insight: string }>('/flood/correlation');
+
 export default api;
