@@ -249,13 +249,19 @@ class LandslideRiskPredictor:
 
         if n_classes == 4:
             # 4-class model: classes = [low, moderate, high, critical]
-            predicted_class = int(np.argmax(probabilities))
             risk_score = float(np.clip(
                 probabilities[1] * 33 + probabilities[2] * 66 + probabilities[3] * 100, 0, 100
             ))
             landslide_probability = float(probabilities[2] + probabilities[3])
-            levels = ["low", "moderate", "high", "critical"]
-            risk_level = levels[predicted_class]
+            # Derive risk_level from risk_score for consistency
+            if risk_score >= 75:
+                risk_level = "critical"
+            elif risk_score >= 50:
+                risk_level = "high"
+            elif risk_score >= 25:
+                risk_level = "moderate"
+            else:
+                risk_level = "low"
             prob_dict = {
                 "low": round(float(probabilities[0]), 3),
                 "moderate": round(float(probabilities[1]), 3),

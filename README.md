@@ -146,7 +146,7 @@ GeoShield is a **full-stack AI-powered landslide monitoring system** designed sp
 | # | Capability | Description | Technology |
 |---|------------|-------------|------------|
 | 1 | **Real-Time Monitoring** | 20 IoT sensor stations across 8 NER states collecting rainfall, soil moisture, ground displacement, tilt, and pore pressure data | FastAPI + SQLite |
-| 2 | **AI Risk Prediction** | Machine learning ensemble (Random Forest + Gradient Boosting) trained on 12,000 real NER terrain samples with 79.4% accuracy | scikit-learn |
+| 2 | **AI Risk Prediction** | Machine learning ensemble (Random Forest + Gradient Boosting) trained on 12,000 real NER terrain samples with 78.2% accuracy | scikit-learn |
 | 3 | **Early Warning System** | Multi-level alert framework (Low → Moderate → High → Critical) with automatic SMS/push notification support | WebSocket + REST |
 | 4 | **GIS Risk Mapping** | Interactive Leaflet.js heatmaps showing real-time risk distribution, road status, village locations, and sensor stations | Leaflet.js |
 | 5 | **Citizen Reporting** | Geo-tagged photo/video reporting system for field officers and local residents with offline queue support | React + FastAPI |
@@ -206,7 +206,7 @@ GeoShield is a **full-stack AI-powered landslide monitoring system** designed sp
 │  │          VotingClassifier (soft, weights=[0.4, 0.6])     │   │
 │  │                                                          │   │
 │  │  Training: 12,000 NER samples | 9 features              │   │
-│  │  Accuracy: 79.4% test | 99.7% train                     │   │
+│  │  Accuracy: 78.2% test | 99.9% train                     │   │
 │  │                                                          │   │
 │  └──────────────────────────────────────────────────────────┘   │
 ├─────────────────────────────────────────────────────────────────┤
@@ -337,8 +337,8 @@ GeoShield's AI model solves these problems by:
   MODEL ACCURACY
   ═══════════════════════════════════════════════════════
 
-  Training Accuracy: ████████████████████████████████████████  99.7%
-  Test Accuracy:     ████████████████████████████████████      79.4%
+  Training Accuracy: ████████████████████████████████████████  99.9%
+  Test Accuracy:     ████████████████████████████████████      78.2%
 
   Cross-validation:  ██████████████████████████████████        ~78%
 
@@ -417,7 +417,7 @@ GeoShield's AI model solves these problems by:
 
 ## 🖥️ Frontend Features
 
-### 8 Interactive Pages
+### 9 Interactive Pages
 
 | Page | Description | Key Features |
 |------|-------------|--------------|
@@ -439,7 +439,7 @@ GeoShield's AI model solves these problems by:
   ├─────────┬─────────┬─────────┬─────────┬─────────┬─────────┤
   │ Active  │ Active  │ People  │ Pending │ Avg     │ High-   │
   │ Sensors │ Alerts  │ at Risk │ Reports │ Risk    │ Risk    │
-  │   20    │    5    │  8,087  │    8    │  43.0   │    6    │
+  │   20    │   36    │ 31,977  │   15    │  43.8   │    6    │
   ├─────────┴─────────┴─────────┴─────────┴─────────┴─────────┤
   │                                                           │
   │  ┌─────────────────────────┐  ┌───────────────────────┐   │
@@ -520,7 +520,10 @@ GeoShield's AI model solves these problems by:
   WEATHER
   ✅ GET  /api/weather/{station}        → Live weather
 
-  TOTAL: 22 ENDPOINTS | ALL RETURNING 200 ✅
+  AUTH
+  ✅ POST /api/auth/login                  → JWT token
+
+  TOTAL: 30 ENDPOINTS | ALL RETURNING 200 ✅
 ```
 
 ---
@@ -837,19 +840,19 @@ GeoShield/
   ║              GeoShield Performance Dashboard                 ║
   ╠══════════════════════════════════════════════════════════════╣
   ║                                                              ║
-  ║  🤖 AI Model            79.4% accuracy (12,000 samples)     ║
+  ║  🤖 AI Model            78.2% accuracy (12,000 samples)     ║
   ║  📡 Sensor Stations     20 across 8 NER states              ║
-  ║  📊 API Endpoints       21 fully functional                 ║
+  ║  📊 API Endpoints       30 fully functional                 ║
   ║  🗺️  GIS Features        Heatmap + Roads + Villages         ║
   ║  🛰️  Satellite Data      Real Open-Meteo integration       ║
   ║  📜 Historical Events   44 events (2011-2024)               ║
   ║  🌐 Languages           4 (EN, HI, BN, AS)                  ║
   ║  ⚡ Response Time        <30 seconds AI assessment           ║
-  ║  👥 People Protected    8,087 at-risk population             ║
+  ║  👥 People Protected    31,977 at-risk population             ║
   ║  🛣️  Roads Monitored     8 (5 open, 2 partial, 1 blocked)   ║
   ║  🏘️  Villages Tracked    18 (6 high-risk zones)             ║
   ║  📝 Citizen Reports     15+ with geo-tagged data             ║
-  ║  🎯 Frontend Pages      8 interactive pages                 ║
+  ║  🎯 Frontend Pages      9 interactive pages                 ║
   ║  📱 Login Roles         4 (Admin, Field, District, Citizen) ║
   ║                                                              ║
   ╚══════════════════════════════════════════════════════════════╝
@@ -871,7 +874,7 @@ GeoShield/
 
 | Phase | Timeline | Features |
 |-------|----------|----------|
-| **Phase 1** | Current | Dashboard, GIS Map, Alerts, Reports, Simulator, Satellite |
+| **Phase 1** | Current | Dashboard, GIS Map, Alerts, Reports, Simulator, Satellite, Click-to-Predict, GeoJSON/CSV Export, Alert Timeline, Demo Flow |
 | **Phase 2** | +3 months | SMS/Push notifications, Mobile app (React Native) |
 | **Phase 3** | +6 months | Real IoT sensor integration, Sentinel-2 NDVI pipeline |
 | **Phase 4** | +12 months | Offline-first mobile, District admin portal, IMD API |
