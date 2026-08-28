@@ -26,26 +26,29 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: Install backend dependencies
-echo [1/4] Installing backend dependencies...
+echo [1/5] Setting up Python virtual environment...
 cd backend
+if not exist "venv" (
+    python -m venv venv
+)
+call venv\Scripts\activate.bat
+
+echo [2/5] Installing backend dependencies...
+pip install --upgrade pip -q
 pip install -r requirements.txt -q
 cd ..
 
-:: Install frontend dependencies
-echo [2/4] Installing frontend dependencies...
+echo [3/5] Installing frontend dependencies...
 cd frontend
 call npm install --silent
 cd ..
 
-:: Build frontend
-echo [3/4] Building frontend...
+echo [4/5] Building frontend...
 cd frontend
 call npm run build
 cd ..
 
-:: Start backend
-echo [4/4] Starting GeoShield server...
+echo [5/5] Starting GeoShield server...
 echo.
 echo ============================================
 echo   GeoShield is running!

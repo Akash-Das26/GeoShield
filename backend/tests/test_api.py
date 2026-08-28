@@ -279,6 +279,11 @@ class TestInfrastructure:
 
 
 # ── Frontend ───────────────────────────────────────────────────
+import os
+dist_path = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
+_has_dist = os.path.isdir(dist_path)
+
+@pytest.mark.skipif(not _has_dist, reason="frontend/dist/ not built")
 class TestFrontend:
     def test_serves_index(self):
         r = client.get("/")
