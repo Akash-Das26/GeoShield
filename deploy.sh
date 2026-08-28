@@ -2,7 +2,9 @@
 # GeoShield Deployment Script
 # Quick setup and run
 
-echo "🛡️ GeoShield - Deploying..."
+set -e
+
+echo "🛡️  GeoShield - Deploying..."
 echo "================================"
 
 # Check Python
@@ -17,26 +19,58 @@ if ! command -v node &> /dev/null; then
     exit 1
 fi
 
-echo "✅ Python: $(python3 --version)"
-echo "✅ Node.js: $(node --version)"
+PYTHON_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+NODE_VER=$(node --version)
+echo "✅ Python: $PYTHON_VER"
+echo "✅ Node.js: $NODE_VER"
 
-# Install backend dependencies
+# ── Backend ──────────────────────────────────────────────
 echo ""
 echo "📦 Installing backend dependencies..."
+
 cd backend
-python3 -m pip install -r requirements.txt
+
+# Try to create venv, fall back to --break-system-packages if venv not available
+VENV_OK=false
+if [ ! -d "venv" ]; then
+    echo "   Creating virtual environment..."
+    if python3 -m venv venv 2>/dev/null; then
+        VENV_OK=true
+    else
+        echo "   ⚠️  python3-venv not available, installing without venv"
+        rm -rf venv
+    fi
+fi
+
+if [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+    VENV_OK=true
+fi
+
+# Install dependencies
+if [ "$VENV_OK" = true ]; then
+    pip install --upgrade pip --quiet
+    pip install -r requirements.txt --quiet
+else
+    pip install --upgrade pip --quiet --break-system-packages 2>/dev/null || true
+    pip install -r requirements.txt --quiet --break-system-packages
+fi
+
 cd ..
 
-# Build frontend
-echo "📦 Building frontend..."
+# ── Frontend ─────────────────────────────────────────────
+echo "📦 Installing & building frontend..."
 cd frontend
-npm install
+npm install --silent
 npx vite build
 cd ..
 
+# ── Start ────────────────────────────────────────────────
 echo ""
 echo "🚀 Starting GeoShield on port 8000..."
 echo "   Open http://localhost:8000 in your browser"
+echo "   Login: admin@geoshield.gov.in / admin123"
+echo "   Press Ctrl+C to stop"
 echo ""
 
 # Start the server

@@ -42,17 +42,18 @@ def get_alerts(
 
 
 @router.get("/active")
-def get_active_alerts(db: Session = Depends(get_db)):
+def get_active_alerts(lang: str = "en", db: Session = Depends(get_db)):
     alerts = db.query(Alert).filter(
         Alert.status == "active"
     ).order_by(desc(Alert.created_at)).all()
 
+    from app.translations import translate_alert
     return [{
         "id": a.id,
         "station_id": a.station_id,
         "risk_level": a.risk_level,
-        "title": a.title,
-        "message": a.message,
+        "title": translate_alert(a.title, a.message, lang)[0],
+        "message": translate_alert(a.title, a.message, lang)[1],
         "affected_population": a.affected_population,
         "latitude": a.latitude,
         "longitude": a.longitude,

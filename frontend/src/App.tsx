@@ -11,6 +11,7 @@ import Simulator from './pages/Simulator';
 import SatelliteData from './pages/SatelliteData';
 import DemoFlow from './pages/DemoFlow';
 import FloodData from './pages/FloodData';
+import Stations from './pages/Stations';
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileFAB from './components/MobileFAB';
 import {
@@ -72,8 +73,8 @@ function LoginPage() {
       <div className="relative w-full max-w-md">
         <div className="glass rounded-2xl p-8 border border-dark-700">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-600/20">
-              <Shield className="w-8 h-8 text-white" />
+            <div className="mx-auto mb-4">
+              <img src="/geoshield_logo.svg" alt="GeoShield Logo" className="w-20 h-20 mx-auto rounded-2xl shadow-lg shadow-green-600/20" />
             </div>
             <h1 className="text-2xl font-bold text-white">GeoShield</h1>
             <p className="text-dark-400 text-sm mt-1">AI-Based Landslide Risk Monitoring</p>
@@ -181,6 +182,7 @@ function MainLayout() {
     { to: '/map', icon: Map, label: t('map'), badge: null },
     { to: '/alerts', icon: AlertTriangle, label: t('alerts'), badge: activeAlerts > 0 ? activeAlerts : null },
     { to: '/reports', icon: FileText, label: t('reports'), badge: null },
+    { to: '/stations', icon: Radio, label: t('stations'), badge: null },
     { to: '/simulator', icon: Zap, label: t('simulateLandslide'), badge: null },
     { to: '/satellite', icon: Satellite, label: t('satellite'), badge: null },
     { to: '/flood', icon: Waves, label: t('floodRisk'), badge: null },
@@ -196,8 +198,8 @@ function MainLayout() {
         {/* Logo */}
         <div className="p-4 border-b border-dark-700">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-600/20">
-              <Shield className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-lg shadow-green-600/20">
+              <img src="/geoshield_logo.svg" alt="GeoShield" className="w-full h-full object-cover" />
             </div>
             {sidebarOpen && (
               <div className="min-w-0">
@@ -382,6 +384,7 @@ function MainLayout() {
             <Route path="/map" element={<RiskMap />} />
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/stations" element={<Stations />} />
             <Route path="/station/:stationId" element={<StationDetail />} />
             <Route path="/simulator" element={<Simulator />} />
             <Route path="/satellite" element={<SatelliteData />} />

@@ -41,7 +41,6 @@ export default function RiskMap() {
   const [showRoads, setShowRoads] = useState(true);
   const [showVillages, setShowVillages] = useState(true);
   const [showStations, setShowStations] = useState(true);
-  const [selectedStation, setSelectedStation] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -115,7 +114,8 @@ export default function RiskMap() {
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/">OSM</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            className="dark-tiles"
           />
 
           {/* Risk Heatmap Circles */}
