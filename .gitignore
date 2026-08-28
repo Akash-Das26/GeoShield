@@ -156,3 +156,13 @@ site/
 
 # pyright
 pyrightconfig.json
+
+# Build artifacts
+dist-electron/
+electron/dist/
+android/
+frontend/android/
+node_modules/
+*.apk
+*.AppImage
+
