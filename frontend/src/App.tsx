@@ -9,10 +9,14 @@ import Reports from './pages/Reports';
 import StationDetail from './pages/StationDetail';
 import Simulator from './pages/Simulator';
 import SatelliteData from './pages/SatelliteData';
+import DemoFlow from './pages/DemoFlow';
+import FloodData from './pages/FloodData';
+import ErrorBoundary from './components/ErrorBoundary';
+import MobileFAB from './components/MobileFAB';
 import {
   LayoutDashboard, Map, AlertTriangle, FileText, Globe, Shield, Radio,
   ChevronLeft, Clock, LogOut, User, Bell, Search, Activity, Mountain,
-  Droplets, BarChart3, Settings, Home, TrendingUp, Building2, MapPin, Zap, Satellite,
+  Droplets, BarChart3, Settings, Home, TrendingUp, Building2, MapPin, Zap, Satellite, Rocket, Waves,
 } from 'lucide-react';
 
 interface AuthContextType {
@@ -121,15 +125,15 @@ function LoginPage() {
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
             {[
-              { email: 'admin@geoshield.gov.in', label: t('adminRole') },
-              { email: 'field@geoshield.gov.in', label: t('fieldOfficerRole') },
-              { email: 'district@geoshield.gov.in', label: t('districtAdminRole') },
-              { email: 'citizen@geoshield.gov.in', label: t('citizenRole') },
+              { email: 'admin@geoshield.gov.in', password: 'admin123', label: t('adminRole') },
+              { email: 'field@geoshield.gov.in', password: 'field123', label: t('fieldOfficerRole') },
+              { email: 'district@geoshield.gov.in', password: 'district123', label: t('districtAdminRole') },
+              { email: 'citizen@geoshield.gov.in', password: 'demo123', label: t('citizenRole') },
             ].map((demo) => (
               <button
                 key={demo.email}
                 type="button"
-                onClick={() => { setEmail(demo.email); setPassword('demo123'); }}
+                onClick={() => { setEmail(demo.email); setPassword(demo.password); }}
                 className="text-[10px] text-dark-400 hover:text-green-400 px-2 py-1.5 rounded-lg bg-dark-800/50 border border-dark-700 hover:border-green-600/30 transition-all"
               >
                 {demo.label}
@@ -179,6 +183,8 @@ function MainLayout() {
     { to: '/reports', icon: FileText, label: t('reports'), badge: null },
     { to: '/simulator', icon: Zap, label: t('simulateLandslide'), badge: null },
     { to: '/satellite', icon: Satellite, label: t('satellite'), badge: null },
+    { to: '/flood', icon: Waves, label: t('floodRisk'), badge: null },
+    { to: '/demo', icon: Rocket, label: t('demoFlow'), badge: null },
   ];
 
   return (
@@ -379,9 +385,13 @@ function MainLayout() {
             <Route path="/station/:stationId" element={<StationDetail />} />
             <Route path="/simulator" element={<Simulator />} />
             <Route path="/satellite" element={<SatelliteData />} />
+            <Route path="/flood" element={<FloodData />} />
+            <Route path="/demo" element={<DemoFlow />} />
           </Routes>
         </main>
       </div>
+      {/* Mobile Floating Action Button */}
+      <MobileFAB />
     </div>
   );
 }
@@ -420,11 +430,13 @@ function App() {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
-      <Router>
-        {isLoggedIn ? <MainLayout /> : <LoginPage />}
-      </Router>
-    </AuthContext.Provider>
+    <ErrorBoundary>
+      <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
+        <Router>
+          {isLoggedIn ? <MainLayout /> : <LoginPage />}
+        </Router>
+      </AuthContext.Provider>
+    </ErrorBoundary>
   );
 }
 

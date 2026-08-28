@@ -1,159 +1,182 @@
-# 🏗️ GeoShield — Build Guide
+# GeoShield Build Guide
 
-## Desktop App Build Instructions
+## Prerequisites
 
-### 🐧 Linux
+| Tool | Version | Purpose |
+|---|---|---|
+| Python | 3.10+ | Backend runtime |
+| Node.js | 18+ | Frontend build |
+| npm | 9+ | Package manager |
+| Git | 2.30+ | Version control |
 
-#### Option 1: AppImage (Portable — No Install Needed)
+---
+
+## Quick Start (One Command)
+
 ```bash
-cd geo-shield
-chmod +x dist-electron/GeoShield-1.0.0.AppImage
-./dist-electron/GeoShield-1.0.0.AppImage
-```
-
-#### Option 2: DEB Package (Ubuntu/Debian)
-```bash
-sudo dpkg -i dist-electron/geoshield_1.0.0_amd64.deb
-geoshield  # Launch from terminal
-```
-
-#### Option 3: Tar.gz (Any Linux)
-```bash
-tar -xzf dist-electron/geoshield-1.0.0.tar.gz
-cd linux-unpacked
-./GeoShield  # Launch
-```
-
-#### Rebuild from Source
-```bash
-cd geo-shield
-# Install dependencies
-cd frontend && npm install && cd ..
-npm install
-
-# Build frontend
-cd frontend && npm run build && cd ..
-
-# Build AppImage
-npx electron-builder --linux --config electron-builder.json
+bash deploy.sh    # Linux/Mac
+start.bat         # Windows
 ```
 
 ---
 
-### 🪟 Windows
+## Manual Setup
 
-#### Option 1: Portable (No Install Needed)
-1. Download `GeoShield-1.0.0-Windows-x64.zip`
-2. Extract to any folder
-3. Run `GeoShield.exe` from `win-unpacked/` folder
-
-#### Option 2: NSIS Installer (Requires Wine on Linux or native Windows)
-```bash
-# On Windows:
-cd geo-shield
-npm install
-npx electron-builder --win --config electron-builder.json
-# Output: dist-electron/GeoShield-1.0.0-Setup.exe
-```
-
-#### Rebuild from Source (Windows)
-```powershell
-# PowerShell or CMD
-cd geo-shield
-cd frontend; npm install; npm run build; cd ..
-npm install
-npx electron-builder --win --config electron-builder.json
-```
-
----
-
-### 🍎 macOS
-```bash
-cd geo-shield
-npx electron-builder --mac --config electron-builder.json
-# Output: dist-electron/GeoShield-1.0.0.dmg
-```
-
----
-
-## 📦 Backend Standalone (Any OS)
+### Backend
 
 ```bash
-cd geo-shield/backend
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate   # Windows
+cd backend
 
 # Install dependencies
 pip install -r requirements.txt
-
-# Seed database
-python -m app.seed_data
-python -m app.seed_risk_history
 
 # Start server
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Open `http://localhost:8000` in any browser.
+The backend will:
+1. Create SQLite database (`geoshield.db`)
+2. Seed 20 NER sensor stations
+3. Train AI model (first run: ~22s, cached after)
+4. Serve API at `http://localhost:8000/api`
 
----
-
-## 🐳 Docker
+### Frontend (Development)
 
 ```bash
-cd geo-shield
-docker-compose up --build
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+```
+
+Frontend runs at `http://localhost:5173` with hot reload.
+
+### Frontend (Production)
+
+```bash
+cd frontend
+
+# Build for production
+npm run build
+
+# Output in frontend/dist/
 ```
 
 ---
 
-## 🚀 One-Click Scripts
+## Docker
 
-| Platform | Script | Command |
-|----------|--------|---------|
-| **Linux/Mac** | `deploy.sh` | `bash deploy.sh` |
-| **Linux/Mac** | `demo.sh` | `./demo.sh` |
-| **Linux/Mac** | `start.sh` | `./start.sh` |
-| **Windows** | `start.bat` | Double-click or run in CMD |
+```bash
+# Build image
+docker build -t geoshield .
+
+# Run container
+docker run -p 8000:8000 geoshield
+```
 
 ---
 
-## ⚠️ Prerequisites
+## Android APK
 
-| Requirement | Version | Where |
-|-------------|---------|-------|
-| Python | 3.10+ | [python.org](https://python.org/downloads) |
-| Node.js | 18+ | [nodejs.org](https://nodejs.org) |
-| npm | 9+ | Comes with Node.js |
+```bash
+cd frontend
+
+# Build frontend
+npm run build
+
+# Sync with Capacitor
+npx cap sync android
+
+# Build APK
+cd android
+./gradlew assembleDebug
+
+# Output: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Requirements
+- Android Studio (latest)
+- Android SDK 34
+- Java 17
 
 ---
 
-## 🔧 Troubleshooting
+## Windows/Linux Desktop (Electron)
 
-### "Port 8000 already in use"
 ```bash
-pkill -f uvicorn  # Linux/Mac
-taskkill /F /IM python.exe  # Windows
+cd frontend
+
+# Build frontend
+npm run build
+
+# Install Electron builder
+npm install electron-builder --save-dev
+
+# Build desktop app
+npx electron-builder --linux  # or --win for Windows
 ```
 
-### "No module named 'app'"
+---
+
+## Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_URL` | `sqlite:///./geoshield.db` | PostgreSQL URL for production |
+| `JWT_SECRET` | `geoshield-dev-secret-...` | JWT signing secret |
+| `TRAINING_DATA_PATH` | Auto-detected | AI training data CSV path |
+| `SATELLITE_DATA_PATH` | Auto-detected | Satellite data JSON path |
+
+---
+
+## Running Tests
+
 ```bash
-cd geo-shield/backend
-pip install -r requirements.txt
+cd backend
+
+# Run API tests (33 tests)
+python -m pytest tests/test_api.py -v
+
+# Run E2E tests (46 tests)
+python -m pytest tests/test_e2e.py -v
+
+# Run all tests
+python -m pytest tests/ -v
 ```
 
-### "Frontend not loading in Electron"
-Ensure `frontend/dist/` exists:
-```bash
-cd geo-shield/frontend && npm run build
-```
+---
 
-### Windows NSIS Build Fails
-Need Wine (Linux) or build on native Windows:
-```bash
-sudo apt install wine64  # Linux
-# OR build on Windows directly
-```
+## Demo Accounts
+
+| Email | Password | Role |
+|---|---|---|
+| admin@geoshield.gov.in | admin123 | Admin |
+| field@geoshield.gov.in | field123 | Field Officer |
+| district@geoshield.gov.in | district123 | District Admin |
+| citizen@geoshield.gov.in | demo123 | Citizen |
+
+---
+
+## API Endpoints (33+)
+
+| Category | Endpoints |
+|---|---|
+| Auth | `POST /api/auth/login` |
+| Dashboard | `GET /api/dashboard/stats`, `/risk-heatmap`, `/rainfall-trend`, `/risk-trend`, `/state-summary` |
+| Sensors | `GET /api/sensors/stations`, `/stations/{id}`, `/stations/{id}/history`, `/readings/latest` |
+| Alerts | `GET /api/alerts`, `/alerts/active`, `/alerts/stats`, `/alerts/timeline`, `/alerts/history` |
+| Reports | `GET /api/reports`, `POST /api/reports` |
+| Simulator | `POST /api/simulate/landslide`, `/simulate/batch`, `/simulate/reset` |
+| Satellite | `GET /api/satellite/data`, `/satellite/summary`, `/satellite/risk-zones` |
+| Weather | `GET /api/weather/{id}`, `/weather/{id}/forecast` |
+| Flood | `GET /api/flood/data`, `/flood/summary`, `/flood/correlation` |
+| Predict | `POST /api/predict` |
+| Export | `GET /api/export/geojson`, `/export/csv`, `/export/risk-zones` |
+| Health | `GET /api/health` |
+
+---
+
+*Last updated: 2026-08-28*

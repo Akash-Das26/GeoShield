@@ -1,60 +1,59 @@
 @echo off
-title GeoShield - AI Landslide Monitoring
+title GeoShield - Landslide Risk Monitoring System
 echo.
-echo  ╔══════════════════════════════════════════════╗
-echo  ║  GeoShield - AI Landslide Monitoring         ║
-echo  ║  Smart India Hackathon 2026                  ║
-echo  ╚══════════════════════════════════════════════╝
+echo ============================================
+echo   GeoShield - Starting Application
+echo   AI-Based Landslide Risk Monitoring
+echo   North Eastern Region, India
+echo ============================================
 echo.
-echo Starting backend server...
 
-cd /d "%~dp0backend"
-
-REM Check Python
+:: Check Python
 python --version >nul 2>&1
-if errorlevel 1 (
-    echo ERROR: Python not found. Please install Python 3.10+
+if %errorlevel% neq 0 (
+    echo [ERROR] Python not found. Please install Python 3.10+
     echo Download: https://www.python.org/downloads/
     pause
     exit /b 1
 )
 
-REM Install dependencies if needed
-if not exist "venv" (
-    echo Creating virtual environment...
-    python -m venv venv
-    call venv\Scripts\activate.bat
-    pip install -r requirements.txt
-) else (
-    call venv\Scripts\activate.bat
+:: Check Node.js
+node --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERROR] Node.js not found. Please install Node.js 18+
+    echo Download: https://nodejs.org/
+    pause
+    exit /b 1
 )
 
-REM Seed database if needed
-if not exist "geoshield.db" (
-    echo Seeding database with NER landslide data...
-    python -m app.seed_data
-    python -m app.seed_risk_history
-)
+:: Install backend dependencies
+echo [1/4] Installing backend dependencies...
+cd backend
+pip install -r requirements.txt -q
+cd ..
 
-REM Start server
-echo Starting API server on http://localhost:8000...
-start /B python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+:: Install frontend dependencies
+echo [2/4] Installing frontend dependencies...
+cd frontend
+call npm install --silent
+cd ..
 
-REM Wait for server
-timeout /t 3 /nobreak >nul
+:: Build frontend
+echo [3/4] Building frontend...
+cd frontend
+call npm run build
+cd ..
 
+:: Start backend
+echo [4/4] Starting GeoShield server...
 echo.
-echo Opening GeoShield in your browser...
-start http://localhost:8000
-
-echo.
-echo ┌──────────────────────────────────────────────┐
-echo │  GeoShield is running!                       │
-echo │  URL: http://localhost:8000                  │
-echo │  Login: admin@geoshield.gov.in / admin123   │
-echo │  Press Ctrl+C to stop                        │
-echo └──────────────────────────────────────────────┘
+echo ============================================
+echo   GeoShield is running!
+echo   Open: http://localhost:8000
+echo   Login: admin@geoshield.gov.in / admin123
+echo   Press Ctrl+C to stop
+echo ============================================
 echo.
 
-REM Keep running
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+cd backend
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000

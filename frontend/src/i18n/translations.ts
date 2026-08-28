@@ -58,6 +58,23 @@ const allKeys = [
   'signInToGeoShield', 'demoLoginHint', 'adminRole', 'fieldOfficerRole', 'districtAdminRole', 'citizenRole',
   'totalReports', 'pendingReview', 'verified', 'allLevels',
   'enterCredentials', 'satellite',
+  // FloodData
+  'floodRiskMonitoring', 'floodLandslideCompoundAnalysis', 'districtsMonitored', 'avgFloodRisk',
+  'totalHistoricalEvents', 'highRiskDistricts', 'floodRiskByDistrict', 'floodVsLandslideCompoundRisk',
+  'compoundRiskFormula', 'floodRiskDistrictDetails', 'annualFloodDays', 'riverSystems',
+  // DemoFlow
+  'sihDemoFlow', 'liveDemo', 'stepByStepWalkthrough', 'runLiveSimulation', 'resetDemo',
+  'simulationCompleteCriticalEvent', 'rainfallSpike', 'alertGeneratedLabel',
+  'keyMetricsToHighlight', 'trainingSamples', 'realNerTerrainData', 'modelAccuracyLabel',
+  'rfGbEnsemble', 'monitoredStations', 'across8NerStates', 'historicalEventsLabel',
+  'languagesLabel', 'apiEndpointsLabel', 'responseTimeLabel', 'p95ApiLatency',
+  'technologyStack', 'techBackend', 'techFrontend', 'techCharts', 'techAuth', 'techDatabase', 'techSatellite',
+  // ErrorBoundary
+  'somethingWentWrong', 'componentCrashed', 'tryAgain', 'reloadPage',
+  // MobileFAB
+  'simulateFab', 'riskMapFab', 'alertsFab', 'liveFab',
+  // Nav items
+  'floodRisk', 'demoFlow',
 ];
 
 export const translations: Record<Language, Record<string, string>> = {
@@ -314,6 +331,68 @@ export const translations: Record<Language, Record<string, string>> = {
     allLevels: 'All Levels',
     enterCredentials: 'Please enter email and password',
     satellite: 'Satellite',
+
+    timeline: 'Timeline',
+    thirtyDayTrend: '30-Day Trend',
+    noAlertsFound: 'No alerts found for the selected filters.',
+    dailyAlertCount: 'Daily Alert Count',
+
+    floodRiskMonitoring: 'বাড় ঝুকি নীরক্ষণ',
+    floodLandslideCompoundAnalysis: 'NER বাড়-ভূমিধস় সঁঙ্ক্রিত জোখিম ঵িশ্লেষণ — এশিয়া বাড় অটলাস + IMD ডেটা',
+    districtsMonitored: 'জিলা পর্যবেক্ষিত জিলা',
+    avgFloodRisk: 'গড়তে বাড় ঝুকি',
+    totalHistoricalEvents: 'সগলোট ইতিহাসিক ঘটনা',
+    highRiskDistricts: 'উচ্চ ঝুকির জিলা',
+    floodRiskByDistrict: 'জিলা কর্তা বাড় ঝুকি',
+    floodVsLandslideCompoundRisk: 'বাড় বনাম ভূমিধস় সঁঙ্ক্রিত ঝুকি',
+    compoundRiskFormula: 'সঁঙ্ক্রিত ঝুকি = 0.4 × বাড় ঝুকি + 0.6 × ভূমিধস় ঝুকি',
+    floodRiskDistrictDetails: 'জিলা ঝুকি বিস্তারিত',
+    annualFloodDays: 'বার্ষিক বাড় দিন',
+    riverSystems: 'নদী প্রণালী',
+    sihDemoFlow: 'SIH 2026 ডেমো ফলো',
+    liveDemo: 'লাইভ ডেমো',
+    stepByStepWalkthrough: 'বিচারীদের জন্য তথ্থেরিক বিদ্যালি',
+    runLiveSimulation: 'লাইভ সিমুলেশন চালাক',
+    resetDemo: 'ডেমো রিসেট',
+    simulationCompleteCriticalEvent: 'সিমুলেশন সম্পূর্ণ — গুরুতর ঘটনা',
+    rainfallSpike: 'বৃষ্টিপাত বৃদ্ধি',
+    alertGeneratedLabel: 'সতর্কতা জনিত',
+    keyMetricsToHighlight: 'গুরুত্ব মেট্রিক্স',
+    trainingSamples: 'প্রশিক্ষণ নমুনা',
+    realNerTerrainData: 'বাস্তবিখিক NER টেরেন ডেটা',
+    modelAccuracyLabel: 'মোডেল শুদ্ধতা',
+    rfGbEnsemble: 'RF + GB সঁঙ্গ্রহ',
+    monitoredStations: 'পর্যবেক্ষিত স্টেশন',
+    across8NerStates: '8 NER রাজ্যে',
+    historicalEventsLabel: 'ইতিহাসিক ঘটনা',
+    languagesLabel: 'ভাষা',
+    apiEndpointsLabel: 'API এন্ডপোইন্ট',
+    responseTimeLabel: 'প্রতিক্রিয়া সময়',
+    p95ApiLatency: 'P95 API বিলম্ব',
+    technologyStack: 'টেকনোলোজি স্ট্যাক',
+    techBackend: 'FastAPI + SQLite + SQLAlchemy',
+    techFrontend: 'React + Tailwind + Leaflet.js',
+    techCharts: 'Recharts (6 চার্ট প্রকার)',
+    techAuth: 'JWT + bcrypt + RBAC',
+    techDatabase: 'SQLite + Alembic মাইগ্রেশন',
+    techSatellite: 'Open-Meteo API (বাস্তবিখিক ডেটা)',
+    somethingWentWrong: 'কিছু ভুল খায়েছে',
+    componentCrashed: 'একটি কম্পোনেন্ট ক্র্যাশ হয়েছে',
+    tryAgain: 'আবার তে চেষ্টা করক',
+    reloadPage: 'পত্তা রিলোড করক',
+    simulateFab: 'সিমুলেট',
+    riskMapFab: 'ঝুকি মানচিত্র',
+    alertsFab: 'সতর্কতা',
+    liveFab: 'লাইভ',
+    floodRisk: 'বাড় ঝুকি',
+    demoFlow: 'ডেমো ফলো',
+
+
+    // FloodData
+    // DemoFlow
+    // ErrorBoundary
+    // MobileFAB
+    // Nav items
   },
   hi: {
     appName: 'जियोशील्ड',
@@ -568,6 +647,11 @@ export const translations: Record<Language, Record<string, string>> = {
     allLevels: 'सभी स्तर',
     enterCredentials: 'कृपया ईमेल और पासवर्ड दर्ज करें',
     satellite: 'उपग्रह',
+
+    timeline: 'समयरेखा',
+    thirtyDayTrend: '30-दिन का रुझान',
+    noAlertsFound: 'चयनित फ़िल्टर के लिए कोई अलर्ट नहीं मिलाॢ',
+    dailyAlertCount: 'दैनिक अलर्ट गिनती',
   },
   bn: {
     appName: 'জিওশিল্ড',
@@ -822,6 +906,11 @@ export const translations: Record<Language, Record<string, string>> = {
     allLevels: 'সকল স্তর',
     enterCredentials: 'অনুগ্রহ করে ইমেইল এবং পাসওয়ার্ড লিখুন',
     satellite: 'উপগ্রহ',
+
+    timeline: 'টাইমলাইন',
+    thirtyDayTrend: '০০-দিনের প্রবণতা',
+    noAlertsFound: 'নির্বাচিত ফিল্টারের জন্য কোনো সতর্কতা পাওয়া যায়নিॢ',
+    dailyAlertCount: 'দৈনিক সতর্কতা গণনা',
   },
   as: {
     appName: 'জিয়শিল্ড',
@@ -1076,6 +1165,11 @@ export const translations: Record<Language, Record<string, string>> = {
     allLevels: 'সকলো স্তৰ',
     enterCredentials: 'অনুগ্ৰহ কৰি ইমেইল আৰু পাছৱৰ্ড লিখক',
     satellite: 'উপগ্ৰহ',
+
+    timeline: 'সময়রেखা',
+    thirtyDayTrend: '০০-দিনীর প্রবণতা',
+    noAlertsFound: 'নির্বাচিত ফিল্টারীর বাবে কোনো সতর্কতা পোওওা নগ’লॢ',
+    dailyAlertCount: 'দৈনিক সতর্কতা গণনা',
   },
 };
 

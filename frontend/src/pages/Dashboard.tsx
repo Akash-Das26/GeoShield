@@ -44,20 +44,22 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Fetch each endpoint independently so one failure doesn't break all
+        const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null);
         const [statsRes, rainRes, riskRes, stateRes, stationsRes, alertsRes] = await Promise.all([
-          getDashboardStats(),
-          getRainfallTrend(),
-          getRiskTrend(),
-          getStateSummary(),
-          getStations(),
-          getAlerts({ status: 'active' }),
+          settle(getDashboardStats()),
+          settle(getRainfallTrend()),
+          settle(getRiskTrend()),
+          settle(getStateSummary()),
+          settle(getStations()),
+          settle(getAlerts({ status: 'active' })),
         ]);
-        setStats(statsRes.data);
-        setRainfall(rainRes.data);
-        setRiskTrend(riskRes.data);
-        setStateData(stateRes.data);
-        setStations(stationsRes.data);
-        setAlertsData(alertsRes.data);
+        if (statsRes?.data) setStats(statsRes.data);
+        if (rainRes?.data) setRainfall(rainRes.data);
+        if (riskRes?.data) setRiskTrend(riskRes.data);
+        if (stateRes?.data) setStateData(stateRes.data);
+        if (stationsRes?.data) setStations(stationsRes.data);
+        if (alertsRes?.data) setAlertsData(alertsRes.data);
       } catch (e) {
         console.error('Dashboard fetch error:', e);
       } finally {

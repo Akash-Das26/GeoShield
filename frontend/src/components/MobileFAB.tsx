@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Map, AlertTriangle, Plus, X, Radio } from 'lucide-react';
+import { t } from '../i18n/translations';
 
 export default function MobileFAB() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
   const actions = [
-    { icon: Zap, label: 'Simulate', path: '/simulator', color: 'from-orange-500 to-red-500' },
-    { icon: Map, label: 'Risk Map', path: '/map', color: 'from-blue-500 to-cyan-500' },
-    { icon: AlertTriangle, label: 'Alerts', path: '/alerts', color: 'from-red-500 to-pink-500' },
-    { icon: Radio, label: 'Live', path: '/', color: 'from-green-500 to-emerald-500' },
+    { icon: Zap, label: t('simulateFab'), path: '/simulator', color: 'from-orange-500 to-red-500' },
+    { icon: Map, label: t('riskMapFab'), path: '/map', color: 'from-blue-500 to-cyan-500' },
+    { icon: AlertTriangle, label: t('alertsFab'), path: '/alerts', color: 'from-red-500 to-pink-500' },
+    { icon: Radio, label: t('liveFab'), path: '/', color: 'from-green-500 to-emerald-500' },
   ];
 
   return (

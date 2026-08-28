@@ -7,79 +7,15 @@ import {
   Shield, Map, Bell, Radio, Activity, Target, Rocket, Eye,
 } from 'lucide-react';
 
-const DEMO_STEPS = [
-  {
-    id: 1,
-    title: 'Dashboard Overview',
-    description: 'View real-time stats across all 20 NER stations — risk distribution, rainfall trends, and state comparisons.',
-    icon: Activity,
-    route: '/',
-    color: 'from-blue-500 to-cyan-500',
-    tip: 'Point out the live clock, risk pie chart, and state radar chart.',
-  },
-  {
-    id: 2,
-    title: 'GIS Risk Map',
-    description: 'Interactive Leaflet.js heatmap showing 20 stations, 8 roads, and 18 villages with real-time risk overlays.',
-    icon: Map,
-    route: '/map',
-    color: 'from-green-500 to-emerald-500',
-    tip: 'Show the layer toggles (stations/roads/villages) and click a station marker for details.',
-  },
-  {
-    id: 3,
-    title: 'Click-to-Predict',
-    description: 'Click ANYWHERE on the map to get instant AI risk prediction — uses nearest station interpolation + ML model.',
-    icon: Target,
-    route: '/map',
-    color: 'from-purple-500 to-violet-500',
-    tip: 'Enable "Click to Predict" mode, click a remote area, show the prediction popup with risk score, factors, and recommendation.',
-  },
-  {
-    id: 4,
-    title: 'Landslide Simulation',
-    description: 'Simulate landslide events at any station — see AI detect the threat, generate alerts, and update dashboards live.',
-    icon: Zap,
-    route: '/simulator',
-    color: 'from-red-500 to-orange-500',
-    tip: 'Select Cherrapunji (NER-011), set CRITICAL intensity, run simulation. Watch the risk score spike to 95+.',
-  },
-  {
-    id: 5,
-    title: 'Early Warning Alerts',
-    description: 'Multi-level alerts with acknowledge/resolve workflow. Timeline view shows alert history with trend charts.',
-    icon: Bell,
-    route: '/alerts',
-    color: 'from-amber-500 to-yellow-500',
-    tip: 'Switch to Timeline view, then 30-Day Trend to show the stacked area chart.',
-  },
-  {
-    id: 6,
-    title: 'Satellite Data',
-    description: 'Real elevation, soil moisture, rainfall, and NDVI data from Open-Meteo API for all 20 NER stations.',
-    icon: Eye,
-    route: '/satellite',
-    color: 'from-teal-500 to-cyan-500',
-    tip: 'Show the elevation range (12m to 2791m), real soil moisture, and satellite risk zones.',
-  },
-  {
-    id: 7,
-    title: 'Station Detail + AI',
-    description: 'Deep-dive into any station — sensor charts, AI risk assessment, contributing factors, and recommendations.',
-    icon: Shield,
-    route: '/station/NER-011',
-    color: 'from-indigo-500 to-blue-500',
-    tip: 'Show Cherrapunji — steep slope, high rainfall, AI recommendation for evacuation.',
-  },
-  {
-    id: 8,
-    title: 'Multilingual Support',
-    description: 'Full translations in English, Hindi, Bengali, and Assamese — switchable from the sidebar.',
-    icon: Radio,
-    route: '/',
-    color: 'from-pink-500 to-rose-500',
-    tip: 'Switch to Hindi, show the dashboard updates. Switch to Assamese to show NER-specific language.',
-  },
+const getDemoSteps = () => [
+  { id: 1, title: t('dashboard'), description: t('initializing'), icon: Activity, route: '/', color: 'from-blue-500 to-cyan-500', tip: t('riskDistribution') },
+  { id: 2, title: t('map'), description: t('riskLegend'), icon: Map, route: '/map', color: 'from-green-500 to-emerald-500', tip: t('roadsLegend') },
+  { id: 3, title: t('riskScore'), description: t('enterLocation'), icon: Target, route: '/map', color: 'from-purple-500 to-violet-500', tip: t('autoSelectHighRisk') },
+  { id: 4, title: t('simulateLandslide'), description: t('simulateLandslideDesc'), icon: Zap, route: '/simulator', color: 'from-red-500 to-orange-500', tip: t('triggerCriticalEvent') },
+  { id: 5, title: t('earlyWarning'), description: t('earlyWarningSubtitle'), icon: Bell, route: '/alerts', color: 'from-amber-500 to-yellow-500', tip: t('comparativeRisk') },
+  { id: 6, title: t('satellite'), description: t('realSatelliteData'), icon: Eye, route: '/satellite', color: 'from-teal-500 to-cyan-500', tip: t('liveFromOpenMeteo') },
+  { id: 7, title: t('aiRiskAssessment'), description: t('aiRiskRuns'), icon: Shield, route: '/station/NER-011', color: 'from-indigo-500 to-blue-500', tip: t('recommendation') },
+  { id: 8, title: t('languageLabel'), description: t('liveMonitoring'), icon: Radio, route: '/', color: 'from-pink-500 to-rose-500', tip: t('demoModeLabel') },
 ];
 
 export default function DemoFlow() {
@@ -115,13 +51,13 @@ export default function DemoFlow() {
       <div className="text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-600/10 border border-green-600/20 text-green-400 text-xs font-medium mb-4">
           <Rocket className="w-3 h-3" />
-          SIH 2026 Demo Flow
+          {t('sihDemoFlow')}
         </div>
         <h1 className="text-3xl font-bold text-white mb-2">
-          GeoShield <span className="text-green-400">Live Demo</span>
+          GeoShield <span className="text-green-400">{t('liveDemo')}</span>
         </h1>
         <p className="text-dark-400 max-w-2xl mx-auto">
-          Step-by-step walkthrough for judges. Each step highlights a key capability of the system.
+          {t('stepByStepWalkthrough')}
         </p>
       </div>
 
@@ -137,14 +73,14 @@ export default function DemoFlow() {
           ) : (
             <Zap className="w-4 h-4" />
           )}
-          Run Live Simulation (Cherrapunji)
+          {t('runLiveSimulation')}
         </button>
         <button
           onClick={handleReset}
           className="px-6 py-3 rounded-xl bg-dark-800 border border-dark-600 text-dark-300 font-medium flex items-center gap-2 hover:text-white transition-all"
         >
           <RotateCcw className="w-4 h-4" />
-          Reset Demo
+          {t('resetDemo')}
         </button>
       </div>
 
@@ -156,7 +92,7 @@ export default function DemoFlow() {
               <AlertTriangle className="w-5 h-5 text-red-400" />
             </div>
             <div>
-              <h3 className="font-bold text-white">Simulation Complete — CRITICAL EVENT</h3>
+              <h3 className="font-bold text-white">{t('simulationCompleteCriticalEvent')}</h3>
               <p className="text-xs text-dark-400">{simResult.simulation.station.name} • {simResult.simulation.station.district}</p>
             </div>
           </div>
@@ -171,7 +107,7 @@ export default function DemoFlow() {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-amber-400">{simResult.simulation.sensor_reading.rainfall_mm}mm</p>
-              <p className="text-xs text-dark-400">Rainfall Spike</p>
+              <p className="text-xs text-dark-400">{t('rainfallSpike')}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-white">{simResult.risk_assessment.time_window_hours}h</p>
@@ -180,7 +116,7 @@ export default function DemoFlow() {
           </div>
           {simResult.alert && (
             <div className="mt-4 p-3 bg-amber-600/10 border border-amber-600/20 rounded-lg">
-              <p className="text-sm text-amber-300">🔔 Alert Generated: <strong>{simResult.alert.title}</strong></p>
+              <p className="text-sm text-amber-300">🔔 {t('alertGeneratedLabel')}: <strong>{simResult.alert.title}</strong></p>
               <p className="text-xs text-dark-400 mt-1">Affected population: {simResult.alert.affected_population.toLocaleString()}</p>
             </div>
           )}
@@ -190,7 +126,7 @@ export default function DemoFlow() {
 
       {/* Demo Steps */}
       <div className="space-y-3">
-        {DEMO_STEPS.map((step, idx) => {
+        {getDemoSteps().map((step, idx) => {
           const isActive = activeStep === step.id;
           const StepIcon = step.icon;
           return (
@@ -238,17 +174,17 @@ export default function DemoFlow() {
 
       {/* Key Stats */}
       <div className="glass rounded-xl p-6">
-        <h3 className="text-sm font-bold text-white mb-4">Key Metrics to Highlight</h3>
+        <h3 className="text-sm font-bold text-white mb-4">{t('keyMetricsToHighlight')}</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Training Samples', value: '12,000', sub: 'Real NER terrain data' },
-            { label: 'Model Accuracy', value: '79.4%', sub: 'RF + GB Ensemble' },
-            { label: 'Monitored Stations', value: '20', sub: 'Across 8 NER states' },
-            { label: 'Historical Events', value: '44', sub: '2011-2024 documented' },
-            { label: 'Languages', value: '4', sub: 'EN, HI, BN, AS' },
-            { label: 'API Endpoints', value: '21', sub: 'All returning 200' },
-            { label: 'Real Satellite Data', value: '60+', dataPoints: 'Elevation, soil, rainfall' },
-            { label: 'Response Time', value: '<50ms', sub: 'P95 API latency' },
+            { label: t('trainingSamples'), value: '12,000', sub: t('realNerTerrainData') },
+            { label: t('modelAccuracyLabel'), value: '79.4%', sub: t('rfGbEnsemble') },
+            { label: t('monitoredStations'), value: '20', sub: t('across8NerStates') },
+            { label: t('historicalEventsLabel'), value: '44', sub: '2011-2024 documented' },
+            { label: t('languagesLabel'), value: '4', sub: 'EN, HI, BN, AS' },
+            { label: t('apiEndpointsLabel'), value: '21', sub: 'All returning 200' },
+            { label: t('realSatelliteData'), value: '60+', dataPoints: t('elevationSoilRainfall') || 'Elevation, soil, rainfall' },
+            { label: t('responseTimeLabel'), value: '<50ms', sub: t('p95ApiLatency') },
           ].map((stat, i) => (
             <div key={i} className="text-center p-3 bg-dark-800/50 rounded-lg">
               <p className="text-xl font-bold text-white">{stat.value}</p>
@@ -261,17 +197,17 @@ export default function DemoFlow() {
 
       {/* Tech Stack */}
       <div className="glass rounded-xl p-6">
-        <h3 className="text-sm font-bold text-white mb-4">Technology Stack</h3>
+        <h3 className="text-sm font-bold text-white mb-4">{t('technologyStack')}</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { layer: 'Backend', tech: 'FastAPI + SQLite + SQLAlchemy' },
+            { layer: t('techBackend'), tech: 'FastAPI + SQLite + SQLAlchemy' },
             { layer: 'AI/ML', tech: 'Random Forest + Gradient Boosting' },
-            { layer: 'Frontend', tech: 'React + Tailwind + Leaflet.js' },
-            { layer: 'Charts', tech: 'Recharts (6 chart types)' },
-            { layer: 'Auth', tech: 'JWT + bcrypt + RBAC' },
-            { layer: 'i18n', tech: '4 languages (EN/HI/BN/AS)' },
-            { layer: 'Database', tech: 'SQLite + Alembic migrations' },
-            { layer: 'Satellite', tech: 'Open-Meteo API (real data)' },
+            { layer: t('techFrontend'), tech: 'React + Tailwind + Leaflet.js' },
+            { layer: t('techCharts'), tech: 'Recharts (6 chart types)' },
+            { layer: t('techAuth'), tech: 'JWT + bcrypt + RBAC' },
+            { layer: t('languagesLabel'), tech: '4 languages (EN/HI/BN/AS)' },
+            { layer: t('techDatabase'), tech: 'SQLite + Alembic migrations' },
+            { layer: t('techSatellite'), tech: 'Open-Meteo API (real data)' },
           ].map((item, i) => (
             <div key={i} className="p-3 bg-dark-800/50 rounded-lg">
               <p className="text-xs text-green-400 font-medium">{item.layer}</p>

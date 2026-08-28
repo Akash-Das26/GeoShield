@@ -25,13 +25,13 @@ def get_alerts(
 
     alerts = query.order_by(desc(Alert.created_at)).limit(limit).all()
 
-    from app.translations import translate_alert_title, translate_alert_message
+    from app.translations import translate_alert
     return [{
         "id": a.id,
         "station_id": a.station_id,
         "risk_level": a.risk_level,
-        "title": translate_alert_title(a.title, lang),
-        "message": translate_alert_message(a.message, lang),
+        "title": translate_alert(a.title, a.message, lang)[0],
+        "message": translate_alert(a.title, a.message, lang)[1],
         "status": a.status,
         "affected_population": a.affected_population,
         "latitude": a.latitude,
