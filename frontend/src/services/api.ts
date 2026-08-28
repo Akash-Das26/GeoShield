@@ -38,7 +38,6 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       clearStoredToken();
-      // Only redirect if not already on login (avoid redirect loops)
       if (!window.location.pathname.includes('/login')) {
         window.location.reload();
       }
@@ -47,6 +46,7 @@ api.interceptors.response.use(
   }
 );
 
+// --- Interfaces ---
 export interface Station {
   id: number;
   station_id: string;
@@ -77,20 +77,11 @@ export interface Station {
 export interface DashboardStats {
   total_stations: number;
   active_stations: number;
-  risk_distribution: {
-    low: number;
-    moderate: number;
-    high: number;
-    critical: number;
-  };
+  risk_distribution: { low: number; moderate: number; high: number; critical: number };
   active_alerts: number;
   pending_reports: number;
   recent_reports_24h: number;
-  road_status: {
-    open: number;
-    partially_blocked: number;
-    blocked: number;
-  };
+  road_status: { open: number; partially_blocked: number; blocked: number };
   affected_population: number;
   total_villages: number;
   high_risk_villages: number;
@@ -174,54 +165,81 @@ export interface WeatherData {
   timestamp: string;
 }
 
-// Auth
+export interface PredictResult {
+  location: { latitude: number; longitude: number };
+  nearest_station: { station_id: string; name: string; distance_km: number } | null;
+  risk_assessment: {
+    risk_score: number;
+    risk_level: string;
+    landslide_probability: number;
+    contributing_factors: string[];
+    predicted_time_window_hours: number;
+    recommendation: string;
+    probabilities: Record<string, number>;
+  };
+  model_info: { type: string; training_samples: string; features: number; feature_names: string[] };
+  timestamp: string;
+}
+
+export interface TimelineEntry {
+  timestamp: string;
+  alerts: { id: number; station_id: string; risk_level: string; title: string; status: string; affected_population: number; created_at: string }[];
+  total_affected: number;
+  max_risk: string;
+}
+
+// --- Auth ---
 export const loginAPI = (email: string, password: string) => {
   const formData = new FormData();
   formData.append('email', email);
   formData.append('password', password);
   return api.post<{ token: string; user: { email: string; name: string; role: string } }>(
-    '/auth/login',
-    formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } }
+    '/auth/login', formData, { headers: { 'Content-Type': 'multipart/form-data' } }
   );
 };
 
-// Dashboard
+// --- Dashboard ---
 export const getDashboardStats = () => api.get<DashboardStats>('/dashboard/stats');
 export const getRiskHeatmap = () => api.get<HeatmapPoint[]>('/dashboard/risk-heatmap');
 export const getRainfallTrend = () => api.get<{ timestamp: string; avg_rainfall: number }[]>('/dashboard/rainfall-trend');
 export const getRiskTrend = () => api.get<{ timestamp: string; avg_risk: number }[]>('/dashboard/risk-trend');
 export const getStateSummary = () => api.get<{ state: string; stations: number; avg_risk_score: number; critical_count: number }[]>('/dashboard/state-summary');
 
-// Sensors
+// --- Sensors ---
 export const getStations = () => api.get<Station[]>('/sensors/stations');
 export const getStation = (id: string) => api.get(`/sensors/stations/${id}`);
 export const getStationHistory = (id: string, hours = 24) => api.get(`/sensors/stations/${id}/history?hours=${hours}`);
+export const getAllLatestReadings = () =>
+  api.get<{ station_id: string; rainfall_mm: number; soil_moisture: number; ground_displacement: number; timestamp: string }[]>('/sensors/readings/latest');
 
-// Alerts
+// --- Alerts ---
 export const getAlerts = (params?: { status?: string; risk_level?: string }) =>
   api.get<Alert[]>('/alerts', { params: { ...params, lang: getCurrentLanguage() } });
 export const getActiveAlerts = () => api.get<Alert[]>('/alerts/active');
 export const getAlertStats = () => api.get<{ total: number; active: number; acknowledged: number; resolved: number; critical_active: number; high_active: number }>('/alerts/stats');
 export const acknowledgeAlert = (id: number) => api.put(`/alerts/${id}/acknowledge`);
 export const resolveAlert = (id: number) => api.put(`/alerts/${id}/resolve`);
+export const getAlertTimeline = (hours: number = 72, riskLevel?: string) =>
+  api.get<{ timeline: TimelineEntry[]; summary: { total_alerts: number; total_hours: number; critical_count: number; high_count: number; moderate_count: number; low_count: number; total_affected_population: number } }>('/alerts/timeline', { params: { hours, risk_level: riskLevel } });
+export const getAlertHistory = (days: number = 30) =>
+  api.get<{ date: string; critical: number; high: number; moderate: number; low: number; total: number }[]>('/alerts/history', { params: { days } });
 
-// Reports
+// --- Reports ---
 export const getReports = (params?: { status?: string }) => api.get<Report[]>('/reports', { params });
 export const submitReport = (formData: FormData) => api.post('/reports', formData, {
   headers: { 'Content-Type': 'multipart/form-data' },
 });
 
-// Roads & Villages
+// --- Roads & Villages ---
 export const getRoads = () => api.get<Road[]>('/roads');
 export const getVillages = (riskZone?: string) => api.get<Village[]>('/villages', { params: riskZone ? { risk_zone: riskZone } : {} });
 
-// Weather
+// --- Weather ---
 export const getWeather = (stationId: string) => api.get<{ data: WeatherData }>(`/weather/${stationId}`);
 export const getWeatherForecast = (stationId: string, hours = 48) =>
   api.get<{ timestamp: string; temperature: number; rainfall_1h: number; forecast_rainfall_24h: number; humidity: number }[]>(`/weather/${stationId}/forecast?hours=${hours}`);
 
-// Simulator
+// --- Simulator ---
 export interface SimulationResult {
   status: string;
   simulation: {
@@ -237,39 +255,33 @@ export interface SimulationResult {
     time_window_hours: number;
     recommendation: string;
   };
-  alert: {
-    id: number;
-    title: string;
-    affected_population: number;
-  } | null;
+  alert: { id: number; title: string; affected_population: number } | null;
 }
 export const simulateLandslide = (data: { station_id?: string; intensity?: string }) =>
   api.post<SimulationResult>('/simulate/landslide', data);
-export const simulateBatch = (count: number = 5) =>
-  api.post(`/simulate/batch?count=${count}`);
-export const resetSimulation = () =>
-  api.post('/simulate/reset');
+export const simulateBatch = (count: number = 5) => api.post(`/simulate/batch?count=${count}`);
+export const resetSimulation = () => api.post('/simulate/reset');
 
-// Sensors
-export const getAllLatestReadings = () =>
-  api.get<{ station_id: string; rainfall_mm: number; soil_moisture: number; ground_displacement: number; timestamp: string }[]>('/sensors/readings/latest');
+// --- Predict (Click-to-Predict on Map) ---
+export const predictAtLocation = (data: {
+  latitude: number; longitude: number;
+  slope?: number; elevation?: number;
+  rainfall_mm?: number; soil_moisture?: number; ndvi?: number;
+}) => api.post<PredictResult>('/predict', data);
 
-// Satellite
+// --- Export ---
+export const exportGeoJSON = () => api.get('/export/geojson');
+export const exportCSV = () => api.get('/export/csv', { responseType: 'blob' });
+export const exportRiskZones = () => api.get('/export/risk-zones');
+
+// --- Satellite ---
 export interface SatelliteStation {
-  id: string;
-  name: string;
-  state: string;
+  id: string; name: string; state: string;
   real_elevation: number;
-  real_soil_moisture_0_7cm: number;
-  real_soil_moisture_7_28cm: number;
-  real_soil_moisture_28_100cm: number;
-  real_soil_temperature: number;
-  real_rainfall_current: number;
-  real_rainfall_24h: number;
-  real_rainfall_7d: number;
-  real_temperature: number;
-  real_humidity: number;
-  real_wind_speed: number;
+  real_soil_moisture_0_7cm: number; real_soil_moisture_7_28cm: number;
+  real_soil_moisture_28_100cm: number; real_soil_temperature: number;
+  real_rainfall_current: number; real_rainfall_24h: number; real_rainfall_7d: number;
+  real_temperature: number; real_humidity: number; real_wind_speed: number;
   estimated_ndvi: number;
 }
 export interface SatelliteSummary {
@@ -284,25 +296,10 @@ export interface SatelliteSummary {
   data_source: string;
 }
 export interface SatelliteRiskZone {
-  station_id: string;
-  name: string;
-  state: string;
-  lat: number;
-  lng: number;
-  satellite_risk_score: number;
-  risk_level: string;
-  factors: {
-    elevation_risk: number;
-    soil_moisture_risk: number;
-    rainfall_risk: number;
-    vegetation_risk: number;
-  };
-  real_data: {
-    elevation: number;
-    soil_moisture: number;
-    rainfall_24h: number;
-    ndvi: number;
-  };
+  station_id: string; name: string; state: string; lat: number; lng: number;
+  satellite_risk_score: number; risk_level: string;
+  factors: { elevation_risk: number; soil_moisture_risk: number; rainfall_risk: number; vegetation_risk: number };
+  real_data: { elevation: number; soil_moisture: number; rainfall_24h: number; ndvi: number };
 }
 export const getSatelliteData = () => api.get<{ stations: SatelliteStation[]; total_stations: number }>('/satellite/data');
 export const getStationSatelliteData = (id: string) => api.get<SatelliteStation>(`/satellite/data/${id}`);
