@@ -382,4 +382,49 @@ export const getFloodSummary = () => api.get<FloodSummary>('/flood/summary');
 export const getFloodCorrelation = () =>
   api.get<{ correlation: FloodLandslideCorrelation[]; insight: string }>('/flood/correlation');
 
+// --- ML Enhanced (XGBoost + Terrain Lookup) ---
+export interface MLPredictionResult {
+  risk_score: number;
+  risk_level: string;
+  confidence: number;
+  source: string;
+  factors: { rainfall_risk: string; slope_risk: string; vegetation_risk: string };
+  feature_importance: Record<string, number> | null;
+  terrain_data: { slope: number; elevation: number; ndvi: number; soil_moisture: number; distance_to_road: number; source: string };
+  latitude: number;
+  longitude: number;
+}
+export interface MLHealth {
+  status: string;
+  model_loaded: boolean;
+  model_type: string;
+  terrain_lookup: boolean;
+  version: string;
+}
+export interface MLDistrictRisk {
+  district: string;
+  risk_level: string;
+  risk_score: number;
+  zone_count: number;
+  critical_count: number;
+  high_count: number;
+  predictions: MLPredictionResult[];
+}
+export interface MLRiskGrid {
+  grid: { lat: number; lng: number; risk_score: number; risk_level: string }[];
+  bounds: { lat_min: number; lat_max: number; lon_min: number; lon_max: number };
+  resolution: number;
+  count: number;
+}
+export const getMLHealth = () => api.get<MLHealth>('/ml/health');
+export const mlPredict = (data: { latitude: number; longitude: number; slope?: number; elevation?: number; rainfall_24hr?: number; soil_moisture?: number; ndvi?: number }) =>
+  api.post<MLPredictionResult>('/ml/predict', data);
+export const mlBatchPredict = (locations: { latitude: number; longitude: number }[]) =>
+  api.post<{ predictions: MLPredictionResult[]; count: number }>('/ml/predict/batch', { locations });
+export const getMLRiskGrid = (resolution: number = 10) =>
+  api.get<MLRiskGrid>('/ml/risk/grid', { params: { resolution } });
+export const getMLDistrictRisk = (district: string) =>
+  api.get<MLDistrictRisk>(`/ml/risk/district/${district}`);
+export const trainMLModel = () => api.post<{ message: string; details: any }>('/ml/train');
+
 export default api;

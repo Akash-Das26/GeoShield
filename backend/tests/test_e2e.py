@@ -378,5 +378,78 @@ class TestSecurity:
         assert r2.status_code == 403
 
 
+
+# ── Enhanced ML (XGBoost + Terrain Lookup) ──────────────────────
+class TestEnhancedML:
+    def test_ml_health(self):
+        r = client.get("/api/ml/health")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["model_loaded"] == True
+        assert data["model_type"] == "xgboost"
+        assert data["terrain_lookup"] == True
+
+    def test_ml_predict_xgboost(self):
+        r = client.post("/api/ml/predict", json={"latitude": 25.58, "longitude": 91.89})
+        assert r.status_code == 200
+        data = r.json()
+        assert data["source"] == "xgboost_model"
+        assert 0 <= data["risk_score"] <= 100
+        assert data["risk_level"] in ["low", "moderate", "high", "very_high", "critical"]
+
+    def test_ml_predict_has_terrain_data(self):
+        r = client.post("/api/ml/predict", json={"latitude": 25.58, "longitude": 91.89})
+        assert r.status_code == 200
+        data = r.json()
+        assert "terrain_data" in data
+        assert data["terrain_data"]["source"] == "terrain_lookup"
+        assert "slope" in data["terrain_data"]
+        assert "elevation" in data["terrain_data"]
+        assert "ndvi" in data["terrain_data"]
+
+    def test_ml_predict_has_feature_importance(self):
+        r = client.post("/api/ml/predict", json={"latitude": 25.58, "longitude": 91.89})
+        assert r.status_code == 200
+        data = r.json()
+        assert data.get("feature_importance") is not None
+        assert "soil_moisture" in data["feature_importance"]
+        assert "slope" in data["feature_importance"]
+
+    def test_ml_district_risk(self):
+        r = client.get("/api/ml/risk/district/shillong")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["district"] == "Shillong"
+        assert data["risk_level"] in ["low", "moderate", "high", "very_high", "critical"]
+        assert data["zone_count"] == 25
+        assert len(data["predictions"]) == 25
+
+    def test_ml_batch_predict(self):
+        r = client.post("/api/ml/predict/batch", json={
+            "locations": [
+                {"latitude": 25.58, "longitude": 91.89},
+                {"latitude": 26.14, "longitude": 91.74},
+            ]
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["count"] == 2
+        assert len(data["predictions"]) == 2
+
+    def test_ml_risk_grid(self):
+        r = client.get("/api/ml/risk/grid?resolution=5")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["count"] == 25
+        assert data["resolution"] == 5
+
+    def test_enhanced_predict_terrain_enrichment(self):
+        r = client.post("/api/predict", json={"latitude": 25.58, "longitude": 91.89})
+        assert r.status_code == 200
+        data = r.json()
+        assert "terrain_data" in data["risk_assessment"]
+        assert data["risk_assessment"]["terrain_data"]["source"] == "terrain_lookup"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
