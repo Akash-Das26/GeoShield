@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   getAlerts, acknowledgeAlert, resolveAlert, getAlertTimeline, getAlertHistory,
   Alert as AlertType, TimelineEntry,
 } from '../services/api';
 import { t } from '../i18n/translations';
+import { useAuth } from '../App';
 import {
   AlertTriangle, CheckCircle, XCircle, Clock, Users, MapPin, Radio, Bell,
   BarChart3, List, History, ChevronRight, Activity, TrendingUp,
@@ -25,6 +26,9 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 export default function Alerts() {
+  const { user } = useAuth();
+  const canAcknowledge = user && ['admin', 'field_officer', 'district_admin'].includes(user.role);
+  const canResolve = user?.role === 'admin';
   const [alerts, setAlerts] = useState<AlertType[]>([]);
   const [filter, setFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
@@ -33,8 +37,16 @@ export default function Alerts() {
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [timelineSummary, setTimelineSummary] = useState<any>(null);
   const [historyData, setHistoryData] = useState<any[]>([]);
+  const [actionFeedback, setActionFeedback] = useState<{id: number; type: 'success' | 'error'; message: string} | null>(null);
 
-  const fetchAlerts = async () => {
+  useEffect(() => {
+    if (actionFeedback) {
+      const t = setTimeout(() => setActionFeedback(null), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [actionFeedback]);
+
+  const fetchAlerts = useCallback(async () => {
     try {
       const params: { status?: string } = {};
       if (filter !== 'all') params.status = filter;
@@ -49,9 +61,9 @@ export default function Alerts() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, riskFilter]);
 
-  const fetchTimeline = async () => {
+  const fetchTimeline = useCallback(async () => {
     try {
       const res = await getAlertTimeline(72);
       setTimeline(res.data.timeline);
@@ -59,16 +71,16 @@ export default function Alerts() {
     } catch (e) {
       console.error('Timeline fetch error:', e);
     }
-  };
+  }, []);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       const res = await getAlertHistory(30);
       setHistoryData(res.data);
     } catch (e) {
       console.error('History fetch error:', e);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchAlerts();
@@ -76,16 +88,28 @@ export default function Alerts() {
     if (view === 'history') fetchHistory();
     const interval = setInterval(fetchAlerts, 15000);
     return () => clearInterval(interval);
-  }, [filter, riskFilter, view]);
+  }, [fetchAlerts, fetchTimeline, fetchHistory, view]);
 
   const handleAcknowledge = async (id: number) => {
-    await acknowledgeAlert(id);
-    fetchAlerts();
+    try {
+      await acknowledgeAlert(id);
+      setActionFeedback({ id, type: 'success', message: t('alertAcknowledged') });
+      fetchAlerts();
+    } catch (e: any) {
+      const msg = e.response?.data?.detail || t('acknowledgeFailed');
+      setActionFeedback({ id, type: 'error', message: msg });
+    }
   };
 
   const handleResolve = async (id: number) => {
-    await resolveAlert(id);
-    fetchAlerts();
+    try {
+      await resolveAlert(id);
+      setActionFeedback({ id, type: 'success', message: t('alertResolved') });
+      fetchAlerts();
+    } catch (e: any) {
+      const msg = e.response?.data?.detail || t('resolveFailed');
+      setActionFeedback({ id, type: 'error', message: msg });
+    }
   };
 
   const stats = {
@@ -237,7 +261,7 @@ export default function Alerts() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-2 ml-4">
-                        {alert.status === 'active' && (
+                        {alert.status === 'active' && canAcknowledge && (
                           <>
                             <button
                               onClick={() => handleAcknowledge(alert.id)}
@@ -246,13 +270,15 @@ export default function Alerts() {
                               <CheckCircle className="w-3 h-3 inline mr-1" />
                               {t('acknowledge')}
                             </button>
-                            <button
-                              onClick={() => handleResolve(alert.id)}
-                              className="px-3 py-1.5 rounded-lg bg-green-600/20 text-green-400 border border-green-600/30 text-xs font-medium hover:bg-green-600/30 transition-all"
-                            >
-                              <XCircle className="w-3 h-3 inline mr-1" />
-                              {t('resolve')}
-                            </button>
+                            {canResolve && (
+                              <button
+                                onClick={() => handleResolve(alert.id)}
+                                className="px-3 py-1.5 rounded-lg bg-green-600/20 text-green-400 border border-green-600/30 text-xs font-medium hover:bg-green-600/30 transition-all"
+                              >
+                                <XCircle className="w-3 h-3 inline mr-1" />
+                                {t('resolve')}
+                              </button>
+                            )}
                           </>
                         )}
                         {alert.status === 'acknowledged' && (
@@ -263,9 +289,17 @@ export default function Alerts() {
                         {alert.status === 'resolved' && (
                           <span className="px-3 py-1.5 rounded-lg bg-green-600/10 text-green-400 border border-green-600/20 text-xs font-medium">
                             ✅ {t('resolved')}
-                          </span>
-                        )}
+                          </span>                        )}
                       </div>
+                      {actionFeedback?.id === alert.id && (
+                        <div className={`w-full mt-2 px-3 py-1.5 rounded-lg text-xs font-medium ${
+                          actionFeedback.type === 'success'
+                            ? 'bg-green-600/10 text-green-400 border border-green-600/20'
+                            : 'bg-red-600/10 text-red-400 border border-red-600/20'
+                        }`}>
+                          {actionFeedback.type === 'success' ? '✓' : '✗'} {actionFeedback.message}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -274,6 +308,7 @@ export default function Alerts() {
           )}
         </>
       )}
+
 
       {/* TIMELINE VIEW */}
       {view === 'timeline' && (

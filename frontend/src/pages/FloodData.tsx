@@ -28,7 +28,7 @@ export default function FloodData() {
           getFloodSummary(),
           getFloodCorrelation(),
         ]);
-        setData(floodRes.data.data);
+        setData(floodRes.data.data || []);
         setSummary(summaryRes.data);
         setCorrelation(corrRes.data.correlation);
       } catch (e) {
@@ -114,12 +114,12 @@ export default function FloodData() {
           <ResponsiveContainer width="100%" height={300}>
             <ScatterChart>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="flood_risk" name="Flood Risk" tick={{ fontSize: 10, fill: '#94a3b8' }} label={{ value: 'Flood Risk', position: 'bottom', fill: '#94a3b8', fontSize: 11 }} />
-              <YAxis dataKey="landslide_risk" name="Landslide Risk" tick={{ fontSize: 10, fill: '#94a3b8' }} label={{ value: 'Landslide Risk', angle: -90, position: 'left', fill: '#94a3b8', fontSize: 11 }} />
+              <XAxis dataKey="flood_risk" name={t('floodRisk')} tick={{ fontSize: 10, fill: '#94a3b8' }} label={{ value: t('floodRisk'), position: 'bottom', fill: '#94a3b8', fontSize: 11 }} />
+              <YAxis dataKey="landslide_risk" name={t('landslideRisk')} tick={{ fontSize: 10, fill: '#94a3b8' }} label={{ value: t('landslideRisk'), angle: -90, position: 'left', fill: '#94a3b8', fontSize: 11 }} />
               <Tooltip
                 contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }}
                 formatter={(value: number, name: string) => [value, name]}
-                labelFormatter={(label) => `District`}
+                labelFormatter={() => t('districtsMonitored')}
               />
               <Scatter data={correlation.filter(c => c.has_landslide_data)} fill="#3b82f6">
                 {correlation.filter(c => c.has_landslide_data).map((entry, i) => (

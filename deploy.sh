@@ -30,18 +30,31 @@ echo "📦 Installing backend dependencies..."
 
 cd backend
 
-# Create venv if it doesn't exist
+# Try to create venv, fall back to --break-system-packages if venv not available
+VENV_OK=false
 if [ ! -d "venv" ]; then
     echo "   Creating virtual environment..."
-    python3 -m venv venv
+    if python3 -m venv venv 2>/dev/null; then
+        VENV_OK=true
+    else
+        echo "   ⚠️  python3-venv not available, installing without venv"
+        rm -rf venv
+    fi
 fi
 
-# Activate venv
-source venv/bin/activate
+if [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+    VENV_OK=true
+fi
 
 # Install dependencies
-pip install --upgrade pip --quiet
-pip install -r requirements.txt --quiet
+if [ "$VENV_OK" = true ]; then
+    pip install --upgrade pip --quiet
+    pip install -r requirements.txt --quiet
+else
+    pip install --upgrade pip --quiet --break-system-packages 2>/dev/null || true
+    pip install -r requirements.txt --quiet --break-system-packages
+fi
 
 cd ..
 

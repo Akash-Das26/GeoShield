@@ -41,7 +41,6 @@ export default function RiskMap() {
   const [showRoads, setShowRoads] = useState(true);
   const [showVillages, setShowVillages] = useState(true);
   const [showStations, setShowStations] = useState(true);
-  const [selectedStation, setSelectedStation] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {

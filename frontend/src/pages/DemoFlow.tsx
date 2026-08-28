@@ -99,11 +99,11 @@ export default function DemoFlow() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <p className="text-2xl font-bold text-red-400">{simResult.risk_assessment.risk_score}/100</p>
-              <p className="text-xs text-dark-400">Risk Score</p>
+              <p className="text-xs text-dark-400">{t('riskScore')}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-orange-400">{(simResult.risk_assessment.landslide_probability * 100).toFixed(0)}%</p>
-              <p className="text-xs text-dark-400">Probability</p>
+              <p className="text-xs text-dark-400">{t('probability')}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-amber-400">{simResult.simulation.sensor_reading.rainfall_mm}mm</p>
@@ -111,7 +111,7 @@ export default function DemoFlow() {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-white">{simResult.risk_assessment.time_window_hours}h</p>
-              <p className="text-xs text-dark-400">Time Window</p>
+              <p className="text-xs text-dark-400">{t('timeWindow')}</p>
             </div>
           </div>
           {simResult.alert && (
@@ -155,14 +155,14 @@ export default function DemoFlow() {
                   }}
                   className="px-3 py-1.5 rounded-lg bg-green-600/20 text-green-400 border border-green-600/30 text-xs font-medium hover:bg-green-600/30 transition-all flex items-center gap-1 flex-shrink-0"
                 >
-                  Go <ChevronRight className="w-3 h-3" />
+                  {t('go')} <ChevronRight className="w-3 h-3" />
                 </button>
               </div>
               {isActive && (
                 <div className="px-4 pb-4 pt-0 ml-14">
                   <div className="p-3 bg-green-600/5 border border-green-600/10 rounded-lg">
                     <p className="text-xs text-green-300 flex items-center gap-1">
-                      💡 <strong>Demo Tip:</strong> {step.tip}
+                      💡 <strong>{t('demoTip')}:</strong> {step.tip}
                     </p>
                   </div>
                 </div>
