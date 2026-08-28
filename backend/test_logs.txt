@@ -38,8 +38,8 @@ tests/test_api.py::TestSatellite::test_satellite_summary PASSED          [ 40%]
 tests/test_api.py::TestSatellite::test_satellite_risk_zones PASSED       [ 41%]
 tests/test_api.py::TestInfrastructure::test_roads PASSED                 [ 42%]
 tests/test_api.py::TestInfrastructure::test_villages PASSED              [ 44%]
-tests/test_api.py::TestFrontend::test_serves_index SKIPPED (frontend...) [ 45%]
-tests/test_api.py::TestFrontend::test_spa_routes SKIPPED (frontend/d...) [ 46%]
+tests/test_api.py::TestFrontend::test_serves_index PASSED                [ 45%]
+tests/test_api.py::TestFrontend::test_spa_routes PASSED                  [ 46%]
 tests/test_e2e.py::TestCoreBackend::test_health_returns_200 PASSED       [ 48%]
 tests/test_e2e.py::TestCoreBackend::test_login_returns_jwt_token PASSED  [ 49%]
 tests/test_e2e.py::TestCoreBackend::test_unauthenticated_access_denied PASSED [ 50%]
@@ -73,19 +73,15 @@ tests/test_e2e.py::TestExportFlow::test_csv_has_headers PASSED           [ 86%]
 tests/test_e2e.py::TestExportFlow::test_risk_zones_has_all_stations PASSED [ 88%]
 tests/test_e2e.py::TestInfrastructureFlow::test_roads_have_status PASSED [ 89%]
 tests/test_e2e.py::TestInfrastructureFlow::test_villages_have_population PASSED [ 90%]
-tests/test_e2e.py::TestFrontendRoutes::test_main_page_loads SKIPPED      [ 92%]
-tests/test_e2e.py::TestFrontendRoutes::test_all_spa_routes SKIPPED (...) [ 93%]
-tests/test_e2e.py::TestFrontendRoutes::test_station_detail_route SKIPPED [ 94%]
+tests/test_e2e.py::TestFrontendRoutes::test_main_page_loads PASSED       [ 92%]
+tests/test_e2e.py::TestFrontendRoutes::test_all_spa_routes PASSED        [ 93%]
+tests/test_e2e.py::TestFrontendRoutes::test_station_detail_route PASSED  [ 94%]
 tests/test_e2e.py::TestAlertWorkflow::test_acknowledge_alert PASSED      [ 96%]
 tests/test_e2e.py::TestSecurity::test_invalid_login_rejected PASSED      [ 97%]
 tests/test_e2e.py::TestSecurity::test_protected_endpoint_without_token PASSED [ 98%]
 tests/test_e2e.py::TestSecurity::test_citizen_cannot_resolve_alerts PASSED [100%]
 
 =============================== warnings summary ===============================
-../../../.local/lib/python3.14/site-packages/fastapi/testclient.py:1
-  /home/sage/.local/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
-    from starlette.testclient import TestClient as TestClient  # noqa
-
 app/database.py:15
   /home/sage/Desktop/GeoShield/backend/tests/../app/database.py:15: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
     Base = declarative_base()
@@ -97,6 +93,11 @@ app/seed_data.py:124: 3380 warnings
 app/seed_data.py:216: 1120 warnings
   /home/sage/Desktop/GeoShield/backend/tests/../app/seed_data.py:216: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
     now = datetime.utcnow() - timedelta(hours=hours_ago)
+
+../../../.local/lib/python3.14/site-packages/joblib/numpy_pickle.py:207: 813 warnings
+  /home/sage/.local/lib/python3.14/site-packages/joblib/numpy_pickle.py:207: DeprecationWarning: Setting the shape on a NumPy array has been deprecated in NumPy 2.5.
+  As an alternative, you can create a new view using np.reshape (with copy=False if needed).
+    array.shape = self.shape
 
 app/seed_data.py:270: 97 warnings
   /home/sage/Desktop/GeoShield/backend/tests/../app/seed_data.py:270: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
@@ -199,8 +200,8 @@ tests/test_e2e.py::TestFloodFlow::test_flood_data_has_districts
     "timestamp": datetime.utcnow().isoformat(),
 
 tests/test_e2e.py::TestAlertWorkflow::test_acknowledge_alert
-  /home/sage/Desktop/GeoShield/backend/tests/../app/routers/alerts.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  /home/sage/Desktop/GeoShield/backend/tests/../app/routers/alerts.py:70: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
     alert.acknowledged_at = datetime.utcnow()
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-================ 70 passed, 5 skipped, 5604 warnings in 26.25s =================
+====================== 75 passed, 6416 warnings in 4.36s =======================

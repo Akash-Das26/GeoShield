@@ -5,6 +5,7 @@ import {
   DashboardStats, HeatmapPoint, Station, Alert,
 } from '../services/api';
 import { t } from '../i18n/translations';
+import { useAuth } from '../App';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar, RadarChart, Radar,
@@ -26,6 +27,7 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [rainfall, setRainfall] = useState<{ timestamp: string; avg_rainfall: number }[]>([]);
   const [riskTrend, setRiskTrend] = useState<{ timestamp: string; avg_risk: number }[]>([]);
@@ -596,18 +598,22 @@ export default function Dashboard() {
                   </span>
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={() => handleAcknowledge(alert.id)}
-                    className="px-3 py-1 rounded-lg bg-amber-600/20 text-amber-400 border border-amber-600/30 text-xs font-medium hover:bg-amber-600/30 transition-all"
-                  >
-                    {t('acknowledge')}
-                  </button>
-                  <button
-                    onClick={() => handleResolve(alert.id)}
-                    className="px-3 py-1 rounded-lg bg-green-600/20 text-green-400 border border-green-600/30 text-xs font-medium hover:bg-green-600/30 transition-all"
-                  >
-                    {t('resolve')}
-                  </button>
+                  {user && ['admin', 'field_officer', 'district_admin'].includes(user.role) && (
+                    <button
+                      onClick={() => handleAcknowledge(alert.id)}
+                      className="px-3 py-1 rounded-lg bg-amber-600/20 text-amber-400 border border-amber-600/30 text-xs font-medium hover:bg-amber-600/30 transition-all"
+                    >
+                      {t('acknowledge')}
+                    </button>
+                  )}
+                  {user?.role === 'admin' && (
+                    <button
+                      onClick={() => handleResolve(alert.id)}
+                      className="px-3 py-1 rounded-lg bg-green-600/20 text-green-400 border border-green-600/30 text-xs font-medium hover:bg-green-600/30 transition-all"
+                    >
+                      {t('resolve')}
+                    </button>
+                  )}
                 </div>
               </div>
               );
