@@ -13,6 +13,7 @@ from starlette.responses import FileResponse
 
 from app.database import engine, Base, SessionLocal
 from app.routers import sensors, dashboard, alerts, reports, weather, simulator, satellite
+from app.routers import predict, alerts_timeline
 from app.auth import authenticate_user, create_token
 
 
@@ -96,6 +97,8 @@ app.include_router(reports.router)
 app.include_router(weather.router)
 app.include_router(simulator.router)
 app.include_router(satellite.router)
+app.include_router(predict.router)
+app.include_router(alerts_timeline.router)
 
 
 @app.get("/api/health")

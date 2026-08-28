@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, Polyline } from 'react-leaflet';
+import { useEffect, useState, useCallback } from 'react';
+import { MapContainer, TileLayer, CircleMarker, Popup, Polyline, useMapEvents } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import {
-  getStations, getRiskHeatmap, getRoads, getVillages,
-  Station, HeatmapPoint, Road, Village,
+  getStations, getRiskHeatmap, getRoads, getVillages, predictAtLocation, exportGeoJSON, exportCSV,
+  Station, HeatmapPoint, Road, Village, PredictResult,
 } from '../services/api';
 import { t } from '../i18n/translations';
-import { MapPin, Navigation, AlertTriangle, Building2 } from 'lucide-react';
-
+import {
+  MapPin, Navigation, AlertTriangle, Building2, Download, FileText, Globe,
+  MousePointerClick, X, Loader2, CheckCircle, AlertCircle,
+} from 'lucide-react';
 
 const RISK_COLORS: Record<string, string> = {
   low: '#22c55e',
@@ -29,8 +31,16 @@ const VILLAGE_COLORS: Record<string, string> = {
   high_risk: '#ef4444',
 };
 
-// Center of NER region
 const NER_CENTER: [number, number] = [25.5, 92.5];
+
+function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
 
 export default function RiskMap() {
   const navigate = useNavigate();
@@ -41,17 +51,20 @@ export default function RiskMap() {
   const [showRoads, setShowRoads] = useState(true);
   const [showVillages, setShowVillages] = useState(true);
   const [showStations, setShowStations] = useState(true);
-  const [selectedStation, setSelectedStation] = useState<string | null>(null);
   const [tileError, setTileError] = useState(false);
+
+  // Click-to-predict state
+  const [predictMode, setPredictMode] = useState(false);
+  const [predictLoading, setPredictLoading] = useState(false);
+  const [predictResult, setPredictResult] = useState<PredictResult | null>(null);
+  const [predictError, setPredictError] = useState('');
+  const [predictMarker, setPredictMarker] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [stationsRes, heatRes, roadsRes, villagesRes] = await Promise.all([
-          getStations(),
-          getRiskHeatmap(),
-          getRoads(),
-          getVillages(),
+          getStations(), getRiskHeatmap(), getRoads(), getVillages(),
         ]);
         setStations(stationsRes.data);
         setHeatmap(heatRes.data);
@@ -66,44 +79,128 @@ export default function RiskMap() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleMapClick = useCallback(async (lat: number, lng: number) => {
+    if (!predictMode) return;
+    setPredictMarker({ lat, lng });
+    setPredictLoading(true);
+    setPredictError('');
+    setPredictResult(null);
+    try {
+      const res = await predictAtLocation({ latitude: lat, longitude: lng });
+      setPredictResult(res.data);
+    } catch (e: any) {
+      setPredictError('Prediction failed. Please try again.');
+    } finally {
+      setPredictLoading(false);
+    }
+  }, [predictMode]);
+
+  const handleExportCSV = async () => {
+    try {
+      const res = await exportCSV();
+      const url = window.URL.createObjectURL(new Blob([(res.data as any)]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `geoshield_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('CSV export error:', e);
+    }
+  };
+
+  const handleExportGeoJSON = async () => {
+    try {
+      const res = await exportGeoJSON();
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `geoshield_risk_data_${new Date().toISOString().slice(0, 10)}.geojson`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('GeoJSON export error:', e);
+    }
+  };
+
   const getRiskRadius = (score: number) => Math.max(6, score / 5);
 
   return (
     <div className="h-full flex flex-col">
       {/* Map Controls */}
-      <div className="p-4 flex items-center gap-4 border-b border-dark-700 bg-dark-900/50">
-        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-green-400" />
-          {t('map')}
-        </h2>
-        <div className="flex items-center gap-2 ml-auto">
-          <button
-            onClick={() => setShowStations(!showStations)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              showStations ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'bg-dark-800 text-dark-400 border border-dark-700'
-            }`}
-          >
-            <Navigation className="w-3 h-3 inline mr-1" />
-            {t('stationsWithCount')} ({stations.length})
-          </button>
-          <button
-            onClick={() => setShowRoads(!showRoads)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              showRoads ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'bg-dark-800 text-dark-400 border border-dark-700'
-            }`}
-          >
-            🛣️ {t('mapRoads')}
-          </button>
-          <button
-            onClick={() => setShowVillages(!showVillages)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              showVillages ? 'bg-purple-600/20 text-purple-400 border border-purple-600/30' : 'bg-dark-800 text-dark-400 border border-dark-700'
-            }`}
-          >
-            <Building2 className="w-3 h-3 inline mr-1" />
-            {t('mapVillages')}
-          </button>
+      <div className="p-4 border-b border-dark-700 bg-dark-900/50">
+        <div className="flex items-center gap-4 flex-wrap">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-green-400" />
+            {t('map')}
+          </h2>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Click-to-Predict toggle */}
+            <button
+              onClick={() => { setPredictMode(!predictMode); setPredictResult(null); setPredictMarker(null); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
+                predictMode
+                  ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50 shadow-lg shadow-purple-600/20'
+                  : 'bg-dark-800 text-dark-400 border border-dark-700 hover:text-white'
+              }`}
+            >
+              <MousePointerClick className="w-3 h-3" />
+              {predictMode ? t('predicting') || 'Predicting...' : t('predictOnMap') || 'Click to Predict'}
+            </button>
+
+            {/* Layer toggles */}
+            <button
+              onClick={() => setShowStations(!showStations)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                showStations ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'bg-dark-800 text-dark-400 border border-dark-700'
+              }`}
+            >
+              <Navigation className="w-3 h-3 inline mr-1" />
+              {t('stationsWithCount')} ({stations.length})
+            </button>
+            <button
+              onClick={() => setShowRoads(!showRoads)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                showRoads ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'bg-dark-800 text-dark-400 border border-dark-700'
+              }`}
+            >
+              🛣️ {t('mapRoads')}
+            </button>
+            <button
+              onClick={() => setShowVillages(!showVillages)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                showVillages ? 'bg-purple-600/20 text-purple-400 border border-purple-600/30' : 'bg-dark-800 text-dark-400 border border-dark-700'
+              }`}
+            >
+              <Building2 className="w-3 h-3 inline mr-1" />
+              {t('mapVillages')}
+            </button>
+
+            {/* Export buttons */}
+            <div className="flex items-center gap-1 ml-2 border-l border-dark-600 pl-2">
+              <button
+                onClick={handleExportCSV}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-dark-800 text-dark-400 border border-dark-700 hover:text-white transition-all flex items-center gap-1"
+              >
+                <FileText className="w-3 h-3" />
+                CSV
+              </button>
+              <button
+                onClick={handleExportGeoJSON}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-dark-800 text-dark-400 border border-dark-700 hover:text-white transition-all flex items-center gap-1"
+              >
+                <Globe className="w-3 h-3" />
+                GeoJSON
+              </button>
+            </div>
+          </div>
         </div>
+        {predictMode && (
+          <div className="mt-2 text-xs text-purple-300 bg-purple-600/10 border border-purple-600/20 rounded-lg px-3 py-2">
+            🖱️ {t('clickMapForPrediction') || 'Click anywhere on the map to get AI risk prediction for that location'}
+          </div>
+        )}
       </div>
 
       {/* Map */}
@@ -113,14 +210,14 @@ export default function RiskMap() {
           zoom={7}
           className="h-full w-full"
           style={{ background: '#1e293b' }}
-        >          <TileLayer
+        >
+          <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
             className="dark-tiles"
-            eventHandlers={{
-              tileerror: () => setTileError(true),
-            }}
+            eventHandlers={{ tileerror: () => setTileError(true) }}
           />
+          <MapClickHandler onMapClick={handleMapClick} />
 
           {/* Risk Heatmap Circles */}
           {showStations && heatmap.map((point, i) => (
@@ -156,6 +253,26 @@ export default function RiskMap() {
             </CircleMarker>
           ))}
 
+          {/* Predict marker */}
+          {predictMarker && (
+            <CircleMarker
+              center={[predictMarker.lat, predictMarker.lng]}
+              radius={10}
+              fillColor="#a855f7"
+              color="#a855f7"
+              weight={3}
+              opacity={1}
+              fillOpacity={0.6}
+            >
+              <Popup>
+                <div className="text-sm">
+                  <p className="font-bold text-purple-600">🎯 AI Prediction Point</p>
+                  <p className="text-gray-500">{predictMarker.lat.toFixed(4)}°N, {predictMarker.lng.toFixed(4)}°E</p>
+                </div>
+              </Popup>
+            </CircleMarker>
+          )}
+
           {/* Roads */}
           {showRoads && roads.map((road, i) => (
             <Polyline
@@ -175,9 +292,7 @@ export default function RiskMap() {
                   }`}>
                     {t('statusLabel')}: {road.status.replace('_', ' ').toUpperCase()}
                   </p>
-                  {road.blockage_reason && (
-                    <p className="text-xs text-gray-500 mt-1">{road.blockage_reason}</p>
-                  )}
+                  {road.blockage_reason && <p className="text-xs text-gray-500 mt-1">{road.blockage_reason}</p>}
                 </div>
               </Popup>
             </Polyline>
@@ -206,9 +321,7 @@ export default function RiskMap() {
                   }`}>
                     {t('zoneLabel')}: {village.risk_zone.replace('_', ' ').toUpperCase()}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    🏥 {village.nearest_hospital_km}km | 🚔 {village.nearest_police_km}km
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">🏥 {village.nearest_hospital_km}km | 🚔 {village.nearest_police_km}km</p>
                 </div>
               </Popup>
             </CircleMarker>
@@ -220,6 +333,84 @@ export default function RiskMap() {
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-amber-600/90 text-white text-xs px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
             ⚠️ {t('failedToLoad')}
             <button onClick={() => setTileError(false)} className="ml-2 underline">{t('dismiss')}</button>
+          </div>
+        )}
+
+        {/* Click-to-Predict Result Panel */}
+        {predictMode && (predictLoading || predictResult || predictError) && (
+          <div className="absolute top-4 right-4 z-[1000] w-80 glass rounded-xl border border-purple-600/30 shadow-2xl overflow-hidden">
+            <div className="bg-purple-600/20 px-4 py-3 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <MousePointerClick className="w-4 h-4 text-purple-400" />
+                AI Risk Prediction
+              </h3>
+              <button onClick={() => { setPredictResult(null); setPredictMarker(null); }} className="text-dark-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4">
+              {predictLoading && (
+                <div className="flex items-center gap-3 py-4">
+                  <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
+                  <span className="text-sm text-dark-300">Analyzing terrain & weather data...</span>
+                </div>
+              )}
+              {predictError && (
+                <div className="flex items-center gap-2 py-2 text-red-400 text-sm">
+                  <AlertCircle className="w-4 h-4" /> {predictError}
+                </div>
+              )}
+              {predictResult && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-dark-400">Risk Score</span>
+                    <span className={`text-lg font-bold ${
+                      predictResult.risk_assessment.risk_level === 'critical' ? 'text-red-400' :
+                      predictResult.risk_assessment.risk_level === 'high' ? 'text-orange-400' :
+                      predictResult.risk_assessment.risk_level === 'moderate' ? 'text-amber-400' : 'text-green-400'
+                    }`}>
+                      {predictResult.risk_assessment.risk_score}/100
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-dark-400">Risk Level</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                      predictResult.risk_assessment.risk_level === 'critical' ? 'bg-red-600/20 text-red-400' :
+                      predictResult.risk_assessment.risk_level === 'high' ? 'bg-orange-600/20 text-orange-400' :
+                      predictResult.risk_assessment.risk_level === 'moderate' ? 'bg-amber-600/20 text-amber-400' : 'bg-green-600/20 text-green-400'
+                    }`}>
+                      {predictResult.risk_assessment.risk_level.toUpperCase()}
+                    </span>
+                  </div>
+                  {predictResult.nearest_station && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-dark-400">Nearest Station</span>
+                      <span className="text-xs text-white">{predictResult.nearest_station.name} ({predictResult.nearest_station.distance_km}km)</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-dark-400">Probability</span>
+                    <span className="text-xs text-white">{(predictResult.risk_assessment.landslide_probability * 100).toFixed(1)}%</span>
+                  </div>
+                  {predictResult.risk_assessment.contributing_factors.length > 0 && (
+                    <div>
+                      <span className="text-xs text-dark-400 block mb-1">Contributing Factors:</span>
+                      {predictResult.risk_assessment.contributing_factors.map((f, i) => (
+                        <div key={i} className="text-xs text-amber-300 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" /> {f}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-dark-700">
+                    <p className="text-xs text-dark-300 leading-relaxed">{predictResult.risk_assessment.recommendation}</p>
+                  </div>
+                  <div className="pt-1">
+                    <p className="text-[10px] text-dark-500">Model: {predictResult.model_info?.type} | Features: {predictResult.model_info?.features}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
