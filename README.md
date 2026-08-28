@@ -820,7 +820,9 @@ GeoShield/
 │   │   ├── database.py                    # SQLite connection
 │   │   ├── seed_data.py                   # Realistic NER seeder
 │   │   ├── ai_engine/
-│   │   │   └── risk_predictor.py          # RF + GB ensemble
+│   │   │   ├── risk_predictor.py          # RF + GB ensemble (original)
+│   │   │   ├── enhanced_predictor.py     # XGBoost + terrain lookup (merged)
+│   │   │   └── terrain_lookup.py         # Nearest-neighbor NER terrain data
 │   │   └── routers/
 │   │       ├── sensors.py                 # Station APIs
 │   │       ├── dashboard.py               # Stats, heatmap, trends
@@ -832,13 +834,14 @@ GeoShield/
 │   │       ├── flood.py                   # Flood risk + correlation
 │   │       ├── alerts_timeline.py         # Timeline + history + trends
 │   │       ├── predict.py                 # Click-to-predict API
+│   │       ├── ml_enhanced.py             # XGBoost + risk grid + district risk
 │   │       └── export.py                  # GeoJSON/CSV export
 │   │   ├── schemas.py                     # Pydantic validation
 │   │   ├── middleware/
 │   │   │   └── rate_limiter.py            # Rate limiting (100/min)
 │   │   └── tests/
 │   │       ├── test_api.py                # 33 unit tests
-│   │       └── test_e2e.py                # 46 integration tests
+│   │       └── test_e2e.py                # 48 integration tests (8 new ML tests)
 │   └── uploads/                           # Photo uploads
 │
 ├── frontend/                              # 🖥️ React + TypeScript
