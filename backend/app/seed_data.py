@@ -5,6 +5,7 @@ Uses actual NER locations: Sikkim, Assam, Manipur, Mizoram, Meghalaya, Nagaland,
 import json
 import random
 import math
+import numpy as np
 from datetime import datetime, timedelta
 from app.database import SessionLocal, engine, Base
 from app.models import (

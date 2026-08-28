@@ -85,6 +85,16 @@ def verify_report(report_id: int, verified_by: str = "Admin", db: Session = Depe
     return {"message": "Report verified", "id": report_id}
 
 
+@router.put("/reports/{report_id}/dismiss")
+def dismiss_report(report_id: int, db: Session = Depends(get_db), user: dict = Depends(require_role("admin", "field_officer", "district_admin"))):
+    report = db.query(CitizenReport).filter(CitizenReport.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    report.status = "dismissed"
+    db.commit()
+    return {"message": "Report dismissed", "id": report_id}
+
+
 # ---- Road Status ----
 
 @router.get("/roads")

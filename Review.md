@@ -232,4 +232,110 @@
 
 ---
 
+## 3. DATA QUALITY AUDIT (2026-08-28)
+
+### 3.1 Complete Data Inventory
+
+| File | Type | Rows | Real? | Useful? | Verdict |
+|------|------|------|-------|---------|--------|
+| `datasets/processed/real_ner_training_data.csv` | AI Training | 12,000 | ⚠️ Synthetic | ⚠️ Medium | Real locations, synthetic features |
+| `datasets/processed/real_satellite_data.json` | Satellite | 20 stations | ✅ Real | ✅ High | Open-Meteo API, but stale |
+| `datasets/raw/ner_historical_landslides.csv` | Events | 44 | ✅ Real | ✅ High | Documented NER events 2011-2024 |
+| `datasets/processed/real_elevation_data.csv` | Elevation | 19 | ✅ Real | ✅ High | Open-Meteo SRTM API |
+| `datasets/processed/real_vegetation_data.csv` | Vegetation | 20 | ⚠️ Estimated | ⚠️ Low | Rounded to 0.1 precision |
+| `kaggle/rainfall_india.csv` | Rainfall | 528 | ❌ Fake | ❌ Useless | 100% identical monthly values |
+| `kaggle/catalog.csv` | Landslide Catalog | 10 | ⚠️ Fabricated | ⚠️ Low | Only 10 events, not 200+ as claimed |
+| `kaggle/landslide_india.csv` | Landslides | 10 | ⚠️ Fabricated | ⚠️ Low | Only 10 events |
+| `datasets/raw/global_landslide_data.csv` | Global Landslides | 1 | ❌ Broken | ❌ Useless | Contains "404: Not Found" |
+| `datasets/raw/india_district_rainfall.csv` | District Rainfall | 1 | ❌ Broken | ❌ Useless | Contains "404: Not Found" |
+| `datasets/raw/nasa_landslide_catalog.csv` | NASA GLC | 1 | ❌ Broken | ❌ Useless | Contains "404: Not Found" |
+| `datasets/processed/demo_ner_data.csv` | Demo | 1,000 | ❌ Synthetic | ⚠️ Low | Random demo data |
+
+### 3.2 AI Training Data — Deep Analysis
+
+**File:** `datasets/processed/real_ner_training_data.csv`
+
+| Metric | Value | Assessment |
+|--------|-------|------------|
+| Total rows | 12,000 | Adequate size |
+| Unique coordinate pairs | 1,921 (16%) | ⚠️ 84% duplicates |
+| NER bounding box coverage | 85% lats, 100% lngs | ✅ Good |
+| Districts covered | 19 NER districts | ✅ Good |
+| Elevation range | 12-2,837m | ✅ Realistic for NER |
+| Slope range | 5-60° | ✅ Realistic |
+| Rainfall range | 2.5-269.8mm/day | ✅ Cherrapunji-compatible |
+| NDVI range | 0.10-0.95 | ✅ Realistic |
+| Label distribution | 35% no-landslide, 65% landslide | ⚠️ Imbalanced (real would be ~5-10% landslide) |
+
+**Verdict:** The training data uses real NER coordinates as anchor points, then generates synthetic terrain/weather features around them. The features have realistic ranges but are not derived from actual measurements. The label imbalance (65% landslide) is unrealistic — in reality, landslides affect <5% of terrain points.
+
+### 3.3 Satellite Data — Deep Analysis
+
+**File:** `datasets/processed/real_satellite_data.json`
+
+| Metric | Value | Assessment |
+|--------|-------|------------|
+| Stations | 20 | ✅ Complete |
+| Data source | Open-Meteo API | ✅ Real API |
+| Last updated | 2026-08-27 | ⚠️ Stale (not live) |
+| Elevation range | 12-2,791m | ✅ Matches SRTM |
+| Soil moisture | 0.288-0.499 m³/m³ | ✅ Realistic |
+| NDVI | 0.488-0.747 | ✅ Realistic |
+| Temperature | 14.9-29.7°C | ✅ Realistic |
+| Humidity | 79.5-96.2% | ✅ Realistic |
+
+**Verdict:** Real data fetched from Open-Meteo API. However, it's cached in a JSON file and never refreshed. The system serves stale data. A `download_real_data.py` script exists but must be run manually.
+
+### 3.4 Kaggle Rainfall — Critical Failure
+
+**File:** `kaggle/rainfall_india.csv`
+
+Every single row (528/528) has the **exact same value for all 12 months**. For example:
+```
+Assam & Meghalaya, 2015: Jan=13.6, Feb=13.6, ..., Dec=13.6 (ANNUAL=162.7)
+```
+
+Real IMD data for Assam & Meghalaya shows:
+- Jun-Sep (monsoon): 200-400mm/month
+- Dec-Feb (winter): 5-15mm/month
+- **Ratio: 10-20x**
+
+This file has a ratio of **1.3x** — completely non-physical.
+
+### 3.5 Broken Raw Data Files
+
+Three files in `datasets/raw/` contain only the text `404: Not Found`:
+- `global_landslide_data.csv` — download failed
+- `india_district_rainfall.csv` — download failed  
+- `nasa_landslide_catalog.csv` — download failed
+
+These were likely fetched from URLs that no longer exist or require authentication.
+
+### 3.6 Seed Data Quality
+
+The `seed_data.py` generates all runtime data:
+- ✅ **Station coordinates:** Verified real against Google Maps (Gangtok, Imphal, Aizawl, Shillong, Kohima all match)
+- ⚠️ **Sensor readings:** Synthetic (random.normal with realistic ranges)
+- ⚠️ **Weather data:** Synthetic (random with monsoon seasonal patterns)
+- ⚠️ **Risk assessments:** AI-computed from synthetic features
+- ⚠️ **Alerts:** Generated from risk thresholds
+
+### 3.7 Recommendations
+
+| Priority | Issue | Fix |
+|----------|-------|-----|
+| 🔴 CRITICAL | Kaggle rainfall is fake | Download real IMD data from https://data.imd.gov.in/ |
+| 🔴 CRITICAL | 3 raw files are 404 | Remove or re-download from valid URLs |
+| 🟡 HIGH | Training data is 84% synthetic | Use `download_real_data.py` to refresh features |
+| 🟡 HIGH | Satellite data is stale | Add auto-refresh on backend startup |
+| 🟡 HIGH | Label imbalance (65% landslide) | Re-balance to ~10% positive class |
+| 🟢 MEDIUM | Kaggle catalog has only 10 events | Download full NASA GLC dataset |
+| 🟢 MEDIUM | Vegetation data has 0.1 precision | Re-fetch with full API precision |
+
+---
+
+*Data quality audit completed: 2026-08-28 — 16 files examined*
+
+---
+
 *Comparison completed: 2026-08-28 — 2-3x verification of all files*

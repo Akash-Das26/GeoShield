@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
-import { getReports, submitReport, Report } from '../services/api';
-import { t } from '../i18n/translations';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { getReports, submitReport, verifyReport, dismissReport, Report } from '../services/api';
+import { useAuth } from '../App';
+import { t, getCurrentLanguage } from '../i18n/translations';
 import {
-  FileText, MapPin, CheckCircle, Clock, Send,
+  FileText, MapPin, CheckCircle, Clock, Send, XCircle,
 } from 'lucide-react';
 
 const REPORT_TYPE_KEYS = [
@@ -14,12 +15,31 @@ const REPORT_TYPE_KEYS = [
 ];
 
 export default function Reports() {
+  const { user } = useAuth();
+  const canVerify = user?.role === 'admin';
+  const canDismiss = user && ['admin', 'field_officer', 'district_admin'].includes(user.role);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [error, setError] = useState('');
+  const [actionFeedback, setActionFeedback] = useState<{id: number; type: 'success' | 'error'; message: string} | null>(null);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => { if (resetTimer.current) clearTimeout(resetTimer.current); };
+  }, []);
+
+  // Clear action feedback after 3s
+  useEffect(() => {
+    if (actionFeedback) {
+      const t = setTimeout(() => setActionFeedback(null), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [actionFeedback]);
 
   // Form state
   const [formType, setFormType] = useState('crack');
@@ -29,7 +49,7 @@ export default function Reports() {
   const [formName, setFormName] = useState('');
   const [formPhone, setFormPhone] = useState('');
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     try {
       const params = statusFilter !== 'all' ? { status: statusFilter } : {};
       const res = await getReports(params);
@@ -39,11 +59,33 @@ export default function Reports() {
     } finally {
       setLoading(false);
     }
+  }, [statusFilter]);
+
+  const handleVerify = async (id: number) => {
+    try {
+      await verifyReport(id);
+      setActionFeedback({ id, type: 'success', message: t('reportVerified') });
+      fetchReports();
+    } catch (e: any) {
+      const msg = e.response?.data?.detail || t('verifyFailed');
+      setActionFeedback({ id, type: 'error', message: msg });
+    }
+  };
+
+  const handleDismiss = async (id: number) => {
+    try {
+      await dismissReport(id);
+      setActionFeedback({ id, type: 'success', message: t('reportDismissed') });
+      fetchReports();
+    } catch (e: any) {
+      const msg = e.response?.data?.detail || t('dismissFailed');
+      setActionFeedback({ id, type: 'error', message: msg });
+    }
   };
 
   useEffect(() => {
     fetchReports();
-  }, [statusFilter]);
+  }, [fetchReports]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,11 +97,13 @@ export default function Reports() {
       formData.append('latitude', formLat || '25.5');
       formData.append('longitude', formLng || '92.5');
       if (formName) formData.append('reporter_name', formName);
-      if (formPhone) formData.append('reporter_phone', formPhone);
+      if (formPhone)    formData.append('reporter_phone', formPhone);
+      formData.append('reporter_language', getCurrentLanguage());
 
       await submitReport(formData);
       setSuccess(true);
-      setTimeout(() => {
+      setError('');
+      resetTimer.current = setTimeout(() => {
         setShowForm(false);
         setSuccess(false);
         setFormDesc('');
@@ -71,6 +115,7 @@ export default function Reports() {
       }, 2000);
     } catch (e) {
       console.error('Submit error:', e);
+      setError(t('submitError'));
     } finally {
       setSubmitting(false);
     }
@@ -91,10 +136,10 @@ export default function Reports() {
             <FileText className="w-6 h-6 text-blue-400" />
             {t('reports')}
           </h1>
-          <p className="text-dark-400 text-sm mt-1">Citizen & Field Official Reports from NER Region</p>
+          <p className="text-dark-400 text-sm mt-1">{t('reportsSubtitle')}</p>
         </div>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => { setShowForm(!showForm); setError(''); }}
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-medium hover:from-green-500 hover:to-emerald-500 transition-all flex items-center gap-2"
         >
           <Send className="w-4 h-4" />
@@ -127,16 +172,22 @@ export default function Reports() {
           {success ? (
             <div className="text-center py-8">
               <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
-              <p className="text-lg font-semibold text-white">Report Submitted Successfully!</p>
-              <p className="text-dark-400 text-sm mt-1">Thank you for helping monitor landslide risks.</p>
+              <p className="text-lg font-semibold text-white">{t('reportSubmitted')}</p>
+              <p className="text-dark-400 text-sm mt-1">{t('reportThankYou')}</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <h3 className="text-lg font-semibold text-white mb-2">📝 New Report</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">📝 {t('newReport')}</h3>
+
+              {error && (
+                <div className="bg-red-600/10 border border-red-600/30 rounded-lg px-4 py-2 text-sm text-red-400">
+                  {error}
+                </div>
+              )}
 
               {/* Report Type */}
               <div>
-                <label className="text-xs text-dark-400 mb-1 block">Report Type *</label>
+                <label className="text-xs text-dark-400 mb-1 block">{t('reportType')} *</label>
                 <div className="grid grid-cols-5 gap-2">
                   {REPORT_TYPE_KEYS.map((type) => (
                     // NOTE: t() is called at render time, not module load time
@@ -173,7 +224,7 @@ export default function Reports() {
               {/* Location */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-dark-400 mb-1 block">Latitude *</label>
+                  <label className="text-xs text-dark-400 mb-1 block">{t('latitude')} *</label>
                   <input
                     type="number"
                     step="any"
@@ -185,7 +236,7 @@ export default function Reports() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-dark-400 mb-1 block">Longitude *</label>
+                  <label className="text-xs text-dark-400 mb-1 block">{t('longitude')} *</label>
                   <input
                     type="number"
                     step="any"
@@ -234,7 +285,7 @@ export default function Reports() {
                   ) : (
                     <Send className="w-4 h-4" />
                   )}
-                  {submitting ? 'Submitting...' : t('submit')}
+                  {submitting ? t('submitting') : t('submit')}
                 </button>
                 <button
                   type="button"
@@ -251,17 +302,17 @@ export default function Reports() {
 
       {/* Filter */}
       <div className="flex gap-2">
-        {['all', 'pending', 'verified', 'dismissed'].map((status) => (
+        {[{ value: 'all', labelKey: 'filterAll' }, { value: 'pending', labelKey: 'filterPending' }, { value: 'verified', labelKey: 'filterVerified' }, { value: 'dismissed', labelKey: 'filterDismissed' }].map(({ value, labelKey }) => (
           <button
-            key={status}
-            onClick={() => setStatusFilter(status)}
+            key={value}
+            onClick={() => setStatusFilter(value)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              statusFilter === status
+              statusFilter === value
                 ? 'bg-green-600/20 text-green-400 border border-green-600/30'
                 : 'bg-dark-800 text-dark-400 border border-dark-700 hover:text-white'
             }`}
           >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+            {t(labelKey)}
           </button>
         ))}
       </div>
@@ -273,8 +324,7 @@ export default function Reports() {
         </div>
       ) : reports.length === 0 ? (
         <div className="text-center py-12">
-          <FileText className="w-12 h-12 text-dark-600 mx-auto mb-3" />
-          <p className="text-dark-400">No reports found.</p>
+          <FileText className="w-12 h-12 text-dark-600 mx-auto mb-3" />            <p className="text-dark-400">{t('noReports')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -286,8 +336,8 @@ export default function Reports() {
                     {REPORT_TYPE_KEYS.find(rt => rt.value === report.report_type)?.icon || '📌'}
                   </span>
                   <div>
-                    <h4 className="text-sm font-semibold text-white capitalize">{report.report_type.replace('_', ' ')}</h4>
-                    <p className="text-xs text-dark-400">{report.reporter_name || 'Anonymous'}</p>
+                    <h4 className="text-sm font-semibold text-white capitalize">{t(REPORT_TYPE_KEYS.find(rt => rt.value === report.report_type)?.labelKey || 'other')}</h4>
+                    <p className="text-xs text-dark-400">{report.reporter_name || t('anonymous')}</p>
                   </div>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -295,20 +345,51 @@ export default function Reports() {
                   report.status === 'pending' ? 'bg-amber-600/10 text-amber-400 border border-amber-600/20' :
                   'bg-dark-700 text-dark-400 border border-dark-600'
                 }`}>
-                  {report.status}
+                  {report.status === 'pending' ? t('statusPending') : report.status === 'verified' ? t('statusVerified') : t('statusDismissed')}
                 </span>
               </div>
               <p className="text-sm text-dark-300 mb-2">{report.description}</p>
               <div className="flex items-center gap-3 text-xs text-dark-400">
                 <span className="flex items-center gap-1">
                   <MapPin className="w-3 h-3" />
-                  {report.latitude.toFixed(4)}, {report.longitude.toFixed(4)}
+                  {report.latitude?.toFixed(4) ?? '-'}, {report.longitude?.toFixed(4) ?? '-'}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   {new Date(report.created_at).toLocaleString()}
                 </span>
               </div>
+              {report.status === 'pending' && (
+                <div className="flex gap-2 mt-3">
+                  {canVerify && (
+                    <button
+                      onClick={() => handleVerify(report.id)}
+                      className="px-3 py-1.5 rounded-lg bg-green-600/20 text-green-400 border border-green-600/30 text-xs font-medium hover:bg-green-600/30 transition-all"
+                    >
+                      <CheckCircle className="w-3 h-3 inline mr-1" />
+                      {t('verify')}
+                    </button>
+                  )}
+                  {canDismiss && (
+                    <button
+                      onClick={() => handleDismiss(report.id)}
+                      className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 border border-red-600/30 text-xs font-medium hover:bg-red-600/30 transition-all"
+                    >
+                      <XCircle className="w-3 h-3 inline mr-1" />
+                      {t('dismiss')}
+                    </button>
+                  )}
+                </div>
+              )}
+              {actionFeedback?.id === report.id && (
+                <div className={`mt-2 px-3 py-1.5 rounded-lg text-xs font-medium ${
+                  actionFeedback.type === 'success'
+                    ? 'bg-green-600/10 text-green-400 border border-green-600/20'
+                    : 'bg-red-600/10 text-red-400 border border-red-600/20'
+                }`}>
+                  {actionFeedback.type === 'success' ? '✓' : '✗'} {actionFeedback.message}
+                </div>
+              )}
             </div>
           ))}
         </div>

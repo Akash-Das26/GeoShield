@@ -270,9 +270,9 @@ export const getAlertHistory = (days: number = 30) =>
 
 // --- Reports ---
 export const getReports = (params?: { status?: string }) => api.get<Report[]>('/reports', { params });
-export const submitReport = (formData: FormData) => api.post('/reports', formData, {
-  headers: { 'Content-Type': 'multipart/form-data' },
-});
+export const submitReport = (formData: FormData) => api.post('/reports', formData);
+export const verifyReport = (id: number) => api.put(`/reports/${id}/verify`);
+export const dismissReport = (id: number) => api.put(`/reports/${id}/dismiss`);
 
 // --- Roads & Villages ---
 export const getRoads = () => api.get<Road[]>('/roads');

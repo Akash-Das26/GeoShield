@@ -1,66 +1,41 @@
 #!/bin/bash
-# ═══════════════════════════════════════════════════════════
-#  GeoShield - One-Command Launcher
-#  Usage: ./start.sh [--docker] [--seed] [--train] [--stop]
-# ═══════════════════════════════════════════════════════════
+echo "🛡️  GeoShield - Starting Server..."
+echo "=================================="
 
-set -e
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$(dirname "$0")/backend"
 
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
+# Kill any existing server
+pkill -f "uvicorn app.main" 2>/dev/null
+sleep 1
 
-ACTION="${1:-start}"
+# Start server
+echo "Starting backend on http://0.0.0.0:8000 ..."
+python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+SERVER_PID=$!
 
-case "$ACTION" in
-    --stop)
-        echo -e "${YELLOW}Stopping all GeoShield services...${NC}"
-        pkill -f "uvicorn app.main" 2>/dev/null || true
-        pkill -f "vite" 2>/dev/null || true
-        echo -e "${GREEN}✅ All services stopped.${NC}"
+# Wait for server to be ready
+echo "Waiting for server to start (AI model training may take ~20s)..."
+for i in $(seq 1 30); do
+    sleep 2
+    if curl -s --connect-timeout 2 http://localhost:8000/api/health > /dev/null 2>&1; then
+        echo ""
+        echo "✅ Server is ready!"
+        echo "   🌐 Open http://localhost:8000 in your browser"
+        echo "   📊 API docs: http://localhost:8000/docs"
+        echo ""
+        echo "   Demo logins:"
+        echo "   - admin@geoshield.gov.in / admin123"
+        echo "   - field@geoshield.gov.in / field123"
+        echo "   - citizen@geoshield.gov.in / demo123"
+        echo ""
+        echo "   Press Ctrl+C to stop the server"
+        wait $SERVER_PID
         exit 0
-        ;;
-    --docker)
-        echo -e "${YELLOW}Starting with Docker Compose...${NC}"
-        docker-compose up --build -d
-        echo -e "${GREEN}✅ Docker services started.${NC}"
-        echo "  Backend: http://localhost:8000"
-        exit 0
-        ;;
-    --seed)
-        echo -e "${YELLOW}Seeding database...${NC}"
-        cd backend
-        python3 -c "from app.seed_data import seed_database; seed_database()"
-        echo -e "${GREEN}✅ Database seeded.${NC}"
-        exit 0
-        ;;
-    --train)
-        echo -e "${YELLOW}Retraining ML model...${NC}"
-        cd backend
-        rm -f app/ai_engine/models/geoshield_model.pkl
-        python3 -c "from app.ai_engine.risk_predictor import get_predictor; get_predictor()"
-        echo -e "${GREEN}✅ Model retrained.${NC}"
-        exit 0
-        ;;
-    --status)
-        echo -e "${YELLOW}GeoShield Service Status:${NC}"
-        if pgrep -f "uvicorn app.main" > /dev/null; then
-            echo -e "  Backend: ${GREEN}RUNNING${NC} (port 8000)"
-        else
-            echo -e "  Backend: ${RED}STOPPED${NC}"
-        fi
-        if curl -s http://localhost:8000/api/health > /dev/null 2>&1; then
-            echo -e "  Health:  ${GREEN}HEALTHY${NC}"
-        else
-            echo -e "  Health:  ${RED}UNREACHABLE${NC}"
-        fi
-        exit 0
-        ;;
-    *)
-        echo -e "${GREEN}🛡️  Starting GeoShield...${NC}"
-        exec "$SCRIPT_DIR/demo.sh"
-        ;;
-esac
+    fi
+    echo -n "."
+done
+
+echo ""
+echo "❌ Server failed to start. Check the logs above."
+kill $SERVER_PID 2>/dev/null
+exit 1

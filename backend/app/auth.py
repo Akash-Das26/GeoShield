@@ -4,35 +4,42 @@ Provides token creation, verification, and FastAPI dependency injection.
 """
 import os
 import jwt
+import bcrypt
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from passlib.context import CryptContext
 
 # Secret key for JWT signing — in production, use a proper secret manager
 JWT_SECRET = os.getenv("JWT_SECRET", "geoshield-dev-secret-change-in-production")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 24
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def _hash_password(password: str) -> str:
+    """Hash a password using bcrypt."""
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+
+def _verify_password(password: str, hashed: str) -> bool:
+    """Verify a password against a bcrypt hash."""
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
 security = HTTPBearer(auto_error=False)
 
 # Demo user database (in production, use a real DB with hashed passwords)
 # Passwords are hashed with bcrypt
 DEMO_USERS = {
-    "admin@geoshield.gov.in": {"password_hash": pwd_context.hash("admin123"), "name": "Admin", "role": "admin"},
-    "field@geoshield.gov.in": {"password_hash": pwd_context.hash("field123"), "name": "Field Officer", "role": "field_officer"},
-    "district@geoshield.gov.in": {"password_hash": pwd_context.hash("district123"), "name": "District Admin", "role": "district_admin"},
-    "citizen@geoshield.gov.in": {"password_hash": pwd_context.hash("demo123"), "name": "Citizen", "role": "citizen"},
+    "admin@geoshield.gov.in": {"password_hash": _hash_password("admin123"), "name": "Admin", "role": "admin"},
+    "field@geoshield.gov.in": {"password_hash": _hash_password("field123"), "name": "Field Officer", "role": "field_officer"},
+    "district@geoshield.gov.in": {"password_hash": _hash_password("district123"), "name": "District Admin", "role": "district_admin"},
+    "citizen@geoshield.gov.in": {"password_hash": _hash_password("demo123"), "name": "Citizen", "role": "citizen"},
 }
 
 
 def authenticate_user(email: str, password: str) -> dict | None:
     """Authenticate a user against the demo user database."""
     user = DEMO_USERS.get(email)
-    if user and pwd_context.verify(password, user["password_hash"]):
+    if user and _verify_password(password, user["password_hash"]):
         return {"email": email, "name": user["name"], "role": user["role"]}
     return None
 

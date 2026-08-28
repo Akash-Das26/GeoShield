@@ -9,7 +9,7 @@
 
 ![SIH 2026](https://img.shields.io/badge/SIH-2026-green?style=for-the-badge)
 ![Problem ID](https://img.shields.io/badge/Problem_ID-26001-blue?style=for-the-badge)
-![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![AI/ML](https://img.shields.io/badge/AI/ML-Random_Forest-orange?style=for-the-badge)
@@ -750,7 +750,7 @@ GeoShield integrates **flood-landslide correlation** data for all 19 NER distric
 git clone https://github.com/officialarghya29/GeoShield.git
 cd GeoShield
 
-# Deploy
+# Deploy (creates venv, installs deps, builds frontend, starts server)
 bash deploy.sh
 
 # Open
@@ -760,15 +760,21 @@ open http://localhost:8000
 ### Manual Setup
 
 ```bash
+# Prerequisites: Python 3.10+, Node.js 18+
+
 # Backend
 cd backend
+python3 -m venv venv          # Create virtual environment
+source venv/bin/activate      # Activate venv (Linux/Mac)
+# .\venv\Scripts\activate    # Activate venv (Windows)
 pip install -r requirements.txt
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 # Frontend (separate terminal)
 cd frontend
 npm install
-npm run dev
+npm run dev                   # Dev server at http://localhost:5173
+# npm run build               # OR build for production
 ```
 
 ### Docker
