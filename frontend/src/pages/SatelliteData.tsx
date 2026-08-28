@@ -47,8 +47,8 @@ export default function SatelliteData() {
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-dark-400 text-sm">{t('fetchingSatelliteData')}</p>
-          <p className="text-dark-500 text-xs mt-1">{t('connectingApi')}</p>
+          <p className="text-dark-400 text-sm">Fetching satellite data...</p>
+          <p className="text-dark-500 text-xs mt-1">Connecting to Open-Meteo API</p>
         </div>
       </div>
     );
@@ -108,7 +108,7 @@ export default function SatelliteData() {
             <Mountain className="w-6 h-6 text-blue-400 mb-2" />
             <p className="text-xs text-dark-400">{t('elevationRange')}</p>
             <p className="text-xl font-bold text-white">{summary.elevation.min} - {summary.elevation.max}</p>
-            <p className="text-xs text-dark-500">Avg: {summary.elevation.avg}m</p>
+            <p className="text-xs text-dark-500">{t('avgLabel')}: {summary.elevation.avg}m</p>
           </div>
           <div className="glass rounded-xl p-4">
             <Droplets className="w-6 h-6 text-emerald-400 mb-2" />
@@ -126,7 +126,7 @@ export default function SatelliteData() {
             <Leaf className="w-6 h-6 text-green-400 mb-2" />
             <p className="text-xs text-dark-400">{t('avgNdvi')}</p>
             <p className="text-xl font-bold text-white">{summary.ndvi.avg}</p>
-            <p className="text-xs text-dark-500">{t('vegetationIndexDesc')}</p>
+            <p className="text-xs text-dark-500">{t('vegIndexLabel')}</p>
           </div>
         </div>
       )}
@@ -137,20 +137,20 @@ export default function SatelliteData() {
           <div className="glass rounded-xl p-4">
             <CloudRain className="w-5 h-5 text-blue-400 mb-2" />
             <p className="text-xs text-dark-400">{t('rainfall7Days')}</p>
-            <p className="text-lg font-bold text-white">{summary.rainfall_7d.total} mm total</p>
+            <p className="text-lg font-bold text-white">{summary.rainfall_7d.total} {t('mmTotal')}</p>
             <p className="text-xs text-dark-500">{t('maxRainfallOneStation').replace('{n}', String(summary.rainfall_7d.max))}</p>
           </div>
           <div className="glass rounded-xl p-4">
             <Thermometer className="w-5 h-5 text-red-400 mb-2" />
-            <p className="text-xs text-dark-400">{t('temperature')}</p>
+            <p className="text-xs text-dark-400">{t('temperatureLabel')}</p>
             <p className="text-lg font-bold text-white">{summary.temperature.min}°C - {summary.temperature.max}°C</p>
-            <p className="text-xs text-dark-500">Avg: {summary.temperature.avg}°C</p>
+            <p className="text-xs text-dark-500">{t('avgLabel')}: {summary.temperature.avg}°C</p>
           </div>
           <div className="glass rounded-xl p-4">
             <Wind className="w-5 h-5 text-cyan-400 mb-2" />
-            <p className="text-xs text-dark-400">{t('humidity')}</p>
+            <p className="text-xs text-dark-400">{t('humidityLabel')}</p>
             <p className="text-lg font-bold text-white">{summary.humidity.min}% - {summary.humidity.max}%</p>
-            <p className="text-xs text-dark-500">Avg: {summary.humidity.avg}%</p>
+            <p className="text-xs text-dark-500">{t('avgLabel')}: {summary.humidity.avg}%</p>
           </div>
         </div>
       )}

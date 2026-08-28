@@ -156,19 +156,5 @@ site/
 
 # pyright
 pyrightconfig.json
-
-# Build artifacts (source code only, binaries via GitHub Releases)
-dist-electron/
-electron/dist/
-android/
-frontend/android/
-node_modules/
-*.apk
-*.AppImage
-*.deb
-*.tar.gz
-*.zip
-*.exe
-*.7z
-branding/team_logo.ico
-
+*.pkl
+geoshield.db
